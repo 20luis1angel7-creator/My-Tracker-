@@ -43,3 +43,7 @@ El tracker de tareas anterior fue reemplazado. Su clave `ritmo-tasks-v1` ya no s
 Los hábitos se guardan con la clave `ritmo-habits-v1`, independientemente de sus registros. Los nombres del historial existente se incorporan a la lista automáticamente. El formulario de registro usa un selector; también se puede pulsar un hábito en la lista para registrar una recaída. Los nombres duplicados se detectan ignorando mayúsculas y espacios exteriores. La exportación incluye hábitos y registros.
 
 El tema se guarda en `ritmo-theme-v1`; en la primera visita se respeta la preferencia del sistema. Las tarjetas de resumen se retiraron para dejar espacio a una futura sección gráfica.
+
+## Navegación
+
+El menú lateral permite alternar entre `#historial` y `#habitos`. «Añadir hábito» muestra el formulario para guardar un nombre y la lista existente. En móvil, el menú se adapta a la parte superior.
