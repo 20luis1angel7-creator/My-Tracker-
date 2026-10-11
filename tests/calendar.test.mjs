@@ -1,0 +1,4 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {validateDates,eventsForDay,dateKey} from '../src/js/calendar.js';
+test('La fecha final es opcional y no puede preceder al inicio',()=>{assert.equal(validateDates('2026-10-11',''),null);assert.equal(validateDates('2026-10-11','2026-10-11'),null);assert.ok(validateDates('2026-10-11','2026-10-10'));assert.ok(validateDates('',''))});
+test('El calendario reúne inicios, finales y registros del día',()=>{const events=eventsForDay('2026-10-11',[{habit:'Coca-Cola',occurredAt:'2026-10-11T10:00',count:2}],['Coca-Cola'],{'coca-cola':{start:'2026-10-11',end:''}});assert.deepEqual(events.map(e=>e.kind),['Inicio','Recaída']);assert.equal(events[1].count,2);assert.equal(eventsForDay('2026-10-12',[],['Coca-Cola'],{}).length,0)});
+test('Las fechas del calendario mantienen el día local',()=>assert.equal(dateKey(new Date(2026,9,11)),'2026-10-11'));

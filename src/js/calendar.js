@@ -1,0 +1,3 @@
+export function dateKey(date){return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`}
+export function validateDates(start,end){if(!/^\d{4}-\d{2}-\d{2}$/.test(start))return 'Elige una fecha de inicio.';if(end&&end<start)return 'La fecha final debe ser igual o posterior al inicio.';return null}
+export function eventsForDay(day,entries,habits,dates){const events=[];for(const name of habits){const d=dates[name.trim().toLocaleLowerCase('es')];if(d?.start===day)events.push({kind:'Inicio',name});if(d?.end===day)events.push({kind:'Final',name})}for(const e of entries)if(e.occurredAt.slice(0,10)===day)events.push({kind:'Recaída',name:e.habit,count:e.count,description:e.description,comment:e.comment});return events}

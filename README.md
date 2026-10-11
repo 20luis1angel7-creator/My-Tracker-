@@ -47,3 +47,9 @@ El tema se guarda en `ritmo-theme-v1`; en la primera visita se respeta la prefer
 ## Navegación
 
 El menú lateral permite alternar entre `#historial` y `#habitos`. «Añadir hábito» muestra el formulario para guardar un nombre y la lista existente. En móvil, el menú se adapta a la parte superior.
+
+## Calendario y fechas
+
+El menú incluye Calendario (`#calendario`), con navegación mensual y detalle por día. Muestra los inicios y finales de los hábitos y todos los registros de recaídas en sus fechas. Los hábitos existentes pueden recibir fechas mediante «Editar fechas». La fecha de inicio es obligatoria para nuevos hábitos; la final es opcional y no puede ser anterior al inicio. Los datos de fechas se guardan en `ritmo-habit-dates-v1` y se incluyen en la exportación.
+
+El botón de flechas contrae el menú y guarda su estado con `ritmo-menu-collapsed`. En móvil conserva una barra compacta superior.
