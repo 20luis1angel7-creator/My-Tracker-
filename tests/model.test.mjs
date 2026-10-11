@@ -1,0 +1,6 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {summary,filterEntries,validateEntry,loadEntries} from '../src/js/model.js';
+const now=new Date('2026-10-11T15:00:00');const entries=[{id:'a',habit:'Teléfono',count:3,occurredAt:'2026-10-10T12:00',description:'Después del trabajo',comment:'Probar una pausa'},{id:'b',habit:' teléfono ',count:2,occurredAt:'2026-09-20T12:00',description:'',comment:''}];
+test('El resumen suma ocurrencias y agrupa hábitos sin distinguir mayúsculas',()=>assert.deepEqual(summary(entries,now),{total:5,month:3,habits:1}));
+test('La búsqueda incluye comentarios y respeta el filtro de hábito',()=>{assert.equal(filterEntries(entries,'pausa','teléfono').length,1);assert.equal(filterEntries(entries,'','otro').length,0)});
+test('Se rechazan cantidades fraccionarias, negativas y fechas futuras',()=>{for(const count of [0,-1,1.5,10000])assert.ok(validateEntry({...entries[0],count},now));assert.ok(validateEntry({...entries[0],occurredAt:'2026-11-01T12:00'},now));assert.equal(validateEntry(entries[0],now),null)});
+test('Un almacenamiento corrupto se detecta sin sobrescribirlo',()=>{assert.throws(()=>loadEntries({getItem:()=>'{roto'}));assert.deepEqual(loadEntries({getItem:()=>JSON.stringify(entries)}),entries)});
