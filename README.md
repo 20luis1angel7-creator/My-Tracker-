@@ -40,7 +40,7 @@ El tracker de tareas anterior fue reemplazado. Su clave `ritmo-tasks-v1` ya no s
 
 ## Hábitos y apariencia
 
-Los hábitos se guardan con la clave `ritmo-habits-v1`, independientemente de sus registros. Los nombres del historial existente se incorporan a la lista automáticamente. El formulario de registro usa un selector; también se puede pulsar un hábito en la lista para registrar una recaída. Los nombres duplicados se detectan ignorando mayúsculas y espacios exteriores. La exportación incluye hábitos y registros.
+Los hábitos se guardan con la clave `ritmo-habits-v1`, independientemente de sus registros. Los nombres del historial existente se incorporan a la lista automáticamente. El formulario de registro permite escribir libremente, guardar el nombre con el botón «Guardar» o elegir uno del desplegable; también se puede pulsar un hábito en la lista para registrar una recaída. Los nombres duplicados se detectan ignorando mayúsculas y espacios exteriores. La exportación incluye hábitos y registros.
 
 El tema se guarda en `ritmo-theme-v1`; en la primera visita se respeta la preferencia del sistema. Las tarjetas de resumen se retiraron para dejar espacio a una futura sección gráfica.
 
@@ -53,3 +53,5 @@ El menú lateral permite alternar entre `#historial` y `#habitos`. «Añadir há
 Las fechas pertenecen a cada recaída, tanto al crearla como al editarla. El inicio es obligatorio; el final es opcional y no puede ser anterior al inicio ni estar en el futuro. Los registros anteriores conservan su fecha como inicio y no tienen final hasta que se editen. El calendario muestra el inicio y el final en sus respectivos días. Los hábitos guardados contienen únicamente sus nombres. La antigua clave de fechas de hábitos ya no se usa y no se aplica a las recaídas.
 
 El menú se contrae en escritorio y conserva su estado. En móvil, el logo abre un panel desde la izquierda; se cierra al seleccionar una opción, pulsar fuera, pulsar el botón de cierre o usar Escape.
+
+Registrar una recaída no añade automáticamente su nombre a la lista de hábitos. El botón «Guardar» junto al campo Hábito se habilita cuando hay texto y guarda solo el nombre, sin enviar el formulario de recaída. El desplegable muestra exclusivamente los nombres guardados. El filtro del historial incluye también los nombres usados en registros libres.
