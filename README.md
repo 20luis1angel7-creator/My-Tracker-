@@ -50,6 +50,6 @@ El menú lateral permite alternar entre `#historial` y `#habitos`. «Añadir há
 
 ## Calendario y fechas
 
-El menú incluye Calendario (`#calendario`), con navegación mensual y detalle por día. Muestra los inicios y finales de los hábitos y todos los registros de recaídas en sus fechas. Los hábitos existentes pueden recibir fechas mediante «Editar fechas». La fecha de inicio es obligatoria para nuevos hábitos; la final es opcional y no puede ser anterior al inicio. Los datos de fechas se guardan en `ritmo-habit-dates-v1` y se incluyen en la exportación.
+Las fechas pertenecen a cada recaída, tanto al crearla como al editarla. El inicio es obligatorio; el final es opcional y no puede ser anterior al inicio ni estar en el futuro. Los registros anteriores conservan su fecha como inicio y no tienen final hasta que se editen. El calendario muestra el inicio y el final en sus respectivos días. Los hábitos guardados contienen únicamente sus nombres. La antigua clave de fechas de hábitos ya no se usa y no se aplica a las recaídas.
 
-El botón de flechas contrae el menú y guarda su estado con `ritmo-menu-collapsed`. En móvil conserva una barra compacta superior.
+El menú se contrae en escritorio y conserva su estado. En móvil, el logo abre un panel desde la izquierda; se cierra al seleccionar una opción, pulsar fuera, pulsar el botón de cierre o usar Escape.

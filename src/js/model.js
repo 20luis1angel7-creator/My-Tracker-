@@ -6,6 +6,7 @@ export function validateEntry(entry,now=new Date()){
  const date=new Date(entry.occurredAt);
  if(!entry.occurredAt||Number.isNaN(date.getTime()))return 'Introduce una fecha válida.';
  if(date>now)return 'La fecha del registro no puede estar en el futuro.';
+ if(entry.endedAt){const end=new Date(entry.endedAt);if(Number.isNaN(end.getTime()))return 'Introduce una fecha final válida.';if(end<date)return 'La fecha final no puede ser anterior al inicio.';if(end>now)return 'La fecha final no puede estar en el futuro.';}
  return null;
 }
 export function summary(entries,now=new Date()){
