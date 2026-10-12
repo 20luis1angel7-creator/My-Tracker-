@@ -3,8 +3,8 @@
 -el historial poner limite de 10
 -hacer que el boton flote y e mantenga siempre en el fondoabajo a la derecha +
 -hacer que el exportar se descargue en excel o pdf y no en json, poner un icono de descarga
--que en la vista movil no salgan las opciones arriba que se guarden mediante el logo
--arreglar lo de fecha inicial y final lo puso donde no va es a la hora de registrarlo
+++que en la vista movil no salgan las opciones arriba que se guarden mediante el logo
+++arreglar lo de fecha inicial y final lo puso donde no va es a la hora de registrarlo
 -hacer click en un dia del calendario y muestre todo lo que eh agregado ese dia 
 -
 
@@ -14,4 +14,4 @@
 -en el calendario si le doy doble click pueda guardar o registrarlo
 -registrar tiempos que paso en las apps del cell
 -poder agregar habitos, cosas que hago por primera vez o no pero para que vea que puedo hacer muchas cosas
--
+-que muestre una grafica como en el celular de las apps
