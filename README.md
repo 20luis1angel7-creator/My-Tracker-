@@ -65,3 +65,7 @@ El formulario existente permite introducir clase y subclase opcionales (Apps →
 ## Gestión de nombres y clasificación
 
 Mis hábitos tiene dos formularios independientes: «Guardar nombre» guarda exclusivamente nombres de hábitos; «Clases y subclases» guarda una clase y múltiples subclases añadidas con +. Guardar clasificación no crea nombres de hábitos. Las subclases se agregan a las existentes sin borrarlas. Los nombres guardados permanecen ocultos hasta pulsar «Ver nombres guardados». La clasificación está disponible como sugerencia al registrar o editar recaídas.
+
+## Tipo de recaída
+
+El formulario permite elegir «Registrar hábito» (nombre obligatorio) o «Registrar clase» (clase obligatoria, subclase opcional, sin pedir hábito). El modo se conserva en el registro y se restaura al editarlo. El calendario, historial y estadísticas incluyen ambos tipos.
