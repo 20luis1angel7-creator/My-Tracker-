@@ -61,3 +61,7 @@ Registrar una recaída no añade automáticamente su nombre a la lista de hábit
 «Estadísticas» muestra barras semanales seleccionables y un desglose por día, con filtros de clase y medida (tiempo o recaídas). El tiempo es la diferencia entre inicio y final, una vez por registro, asignada al día de inicio. Los registros sin final aportan cero tiempo y mantienen su cantidad de recaídas. Los intervalos superpuestos se suman, no se deduplican.
 
 El formulario existente permite introducir clase y subclase opcionales (Apps → Instagram). Los nombres guardados conservan estos campos en `ritmo-habit-groups-v1`; al elegirlos se rellenan automáticamente. Los registros antiguos aparecen como «Sin clase» hasta que se editen. La exportación incluye la clasificación.
+
+## Gestión de clases
+
+Mis hábitos separa la creación de clases, la adición repetida de subclases a una clase y el guardado de hábitos. El catálogo se guarda en `ritmo-classes-v1`; incorpora las clasificaciones existentes. Los nombres guardados quedan ocultos hasta pulsar «Ver nombres guardados».
