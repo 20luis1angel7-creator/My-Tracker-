@@ -50,7 +50,7 @@ El menú lateral permite alternar entre `#historial` y `#habitos`. «Añadir há
 
 ## Calendario y fechas
 
-Las fechas pertenecen a cada recaída, tanto al crearla como al editarla. El inicio es obligatorio; el final es opcional y no puede ser anterior al inicio ni estar en el futuro. Los registros anteriores conservan su fecha como inicio y no tienen final hasta que se editen. El calendario muestra el inicio y el final en sus respectivos días. Los hábitos guardados contienen únicamente sus nombres. La antigua clave de fechas de hábitos ya no se usa y no se aplica a las recaídas.
+Las fechas pertenecen a cada recaída, tanto al crearla como al editarla. El inicio es obligatorio; el final es opcional y no puede ser anterior al inicio ni estar en el futuro. Los registros anteriores conservan su fecha como inicio y no tienen final hasta que se editen. El calendario muestra cada recaída una sola vez en su día de inicio, y presenta las dos fechas en el detalle del mismo registro. Los hábitos guardados contienen únicamente sus nombres. La antigua clave de fechas de hábitos ya no se usa y no se aplica a las recaídas.
 
 El menú se contrae en escritorio y conserva su estado. En móvil, el logo abre un panel desde la izquierda; se cierra al seleccionar una opción, pulsar fuera, pulsar el botón de cierre o usar Escape.
 

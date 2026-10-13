@@ -1,2 +1,2 @@
 export function dateKey(date){return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`}
-export function eventsForDay(day,entries){const events=[];for(const e of entries){const event={name:e.habit,count:e.count,description:e.description,comment:e.comment};if(e.occurredAt.slice(0,10)===day)events.push({...event,kind:'Inicio de recaída'});if(e.endedAt?.slice(0,10)===day)events.push({...event,kind:'Final de recaída'})}return events}
+export function eventsForDay(day,entries){return entries.filter(e=>e.occurredAt.slice(0,10)===day).map(e=>({id:e.id,name:e.habit,count:e.count,description:e.description,comment:e.comment,occurredAt:e.occurredAt,endedAt:e.endedAt||'',kind:'Recaída'}))}
