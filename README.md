@@ -57,3 +57,7 @@ El backend se ejecuta en local con `npm start`. La publicación actual en Sites 
 La interfaz conserva las claves existentes de localStorage y los registros del navegador. Crear una recaída permite elegir hábito o clase. Inicio obligatorio, final opcional. El calendario muestra cada registro una sola vez en su día inicial, con ambas fechas en el detalle. La gráfica calcula la duración entre inicio y final una vez por registro; los registros abiertos no aportan tiempo y sí aportan su cantidad. Los intervalos superpuestos se suman.
 
 Mis hábitos separa el guardado de nombres del guardado de clases con múltiples subclases. Los nombres se muestran al abrir el desplegable. Los datos se exportan en JSON y no se sincronizan entre dispositivos.
+
+## Verificación de interfaz
+
+`npm test` también ejecuta flujos del frontend en un DOM simulado: guardar nombres y múltiples subclases, crear y editar ambos tipos de recaída, buscar, eliminar, navegar por calendario y estadísticas, cambiar tema y abrir/cerrar el menú móvil. Esto verifica eventos y persistencia; no sustituye una revisión visual en un navegador real.

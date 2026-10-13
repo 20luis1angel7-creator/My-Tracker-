@@ -9,7 +9,9 @@
     "start": "node build/backend/src/server.js"
   },
   "devDependencies": {
+    "@types/jsdom": "^30.0.0",
     "@types/node": "^26.6.5",
+    "jsdom": "^29.1.1",
     "typescript": "^7.0.2"
   }
 }
