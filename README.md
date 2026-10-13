@@ -1,71 +1,59 @@
-# Ritmo · Registro de recaídas
+# Ritmo · TypeScript
 
-Aplicación web en español para registrar las veces que ocurre un mal hábito, describir lo sucedido y añadir comentarios o reflexiones. Permite editar y eliminar registros, buscar, filtrar por hábito y exportar una copia JSON. Empieza vacía, sin datos de ejemplo. Incluye modo claro y oscuro con preferencia guardada y una lista independiente de hábitos reutilizables.
+Tracker de recaídas con hábitos, clases y subclases, calendario y estadísticas semanales. Interfaz en español, modos claro y oscuro y menú móvil lateral.
 
-## Estructura
+## Carpetas
 
 ```text
-ritmo/
-├── src/                 # Código fuente editable
-│   ├── index.html       # Pantalla y formulario
-│   ├── css/styles.css   # Estilos y adaptación a móvil
-│   └── js/
-│       ├── app.js       # Interfaz, eventos, guardado y exportación
-│       └── model.js     # Validación, búsqueda y cálculos
-├── scripts/build.mjs   # Copia src/ a dist/ para publicar
-├── tests/model.test.mjs # Pruebas de la lógica de registros
-├── dist/                # Archivos generados para servir la aplicación
-├── .openai/hosting.json # Configuración del sitio existente
-├── package.json         # Comandos del proyecto, sin dependencias
-└── README.md
+frontend/
+  index.html              Pantallas y formularios
+  src/
+    app.ts                Interfaz y almacenamiento del navegador
+    lib/                  Acceso a la lógica compartida
+    styles/styles.css     Estilos responsive
+backend/
+  src/
+    server.ts             Servidor HTTP local y archivos estáticos
+    api.ts                Validación y estadísticas por HTTP
+shared/
+  types.ts                Tipos de registros, clases y eventos
+  domain/
+    model.ts              Validación, búsqueda y resumen
+    calendar.ts           Eventos del calendario
+    statistics.ts         Duraciones, semanas y desglose
+scripts/build.ts          Empaquetado del frontend
+ tests/                   Pruebas en TypeScript
+build/                    TypeScript compilado (generado, ignorado en Git)
+dist/                     Frontend generado para Sites
+.openai/hosting.json       Identidad y publicación del sitio
+package.json
+package-lock.json
+tsconfig.json             TypeScript en modo estricto
 ```
 
-## Uso local
+## Ejecutar
 
-Requiere Node.js 18 o superior; el servidor de ejemplo requiere Python 3.
+Requiere Node.js 20 o superior.
 
 ```bash
+npm ci
+npm run typecheck
 npm test
-npm run build
 npm start
 ```
 
-Abre http://localhost:8080. Modifica `src/` y ejecuta `npm run build` para actualizar `dist/`.
+Abre http://localhost:8080. `npm run build` compila TypeScript y genera `dist/`. `npm start` ejecuta el backend y sirve el frontend. `PORT` permite cambiar el puerto. Edita los archivos fuente, no `build/` ni `dist/`.
 
-## Datos
+## Backend
 
-Los registros se guardan en localStorage con la clave `ritmo-relapses-v1`. No se sincronizan entre dispositivos. Una entrada puede contener varias ocurrencias; el resumen suma esas cantidades, no solo el número de entradas. Las fechas se interpretan en la zona horaria del navegador. Exportar descarga una copia JSON; la aplicación no incorpora importación.
+- `GET /api/health`: estado del servidor.
+- `POST /api/entries/validate`: valida un registro enviado como JSON.
+- `POST /api/statistics`: recibe `{ entries, date, metric, category }` y devuelve los siete días de la semana. `metric` acepta `time` o `count`.
 
-El tracker de tareas anterior fue reemplazado. Su clave `ritmo-tasks-v1` ya no se lee ni se usa. Sus datos antiguos, si existían en un navegador, no se convierten en recaídas.
+El backend se ejecuta en local con `npm start`. La publicación actual en Sites es estática y publica únicamente el frontend: los endpoints del backend no están desplegados ni conectados al formulario. El backend no tiene base de datos ni autenticación; calcula y valida los datos recibidos sin persistirlos.
 
-## Hábitos y apariencia
+## Datos y comportamiento
 
-Los hábitos se guardan con la clave `ritmo-habits-v1`, independientemente de sus registros. Los nombres del historial existente se incorporan a la lista automáticamente. El formulario de registro permite escribir libremente, guardar el nombre con el botón «Guardar» o elegir uno del desplegable; también se puede pulsar un hábito en la lista para registrar una recaída. Los nombres duplicados se detectan ignorando mayúsculas y espacios exteriores. La exportación incluye hábitos y registros.
+La interfaz conserva las claves existentes de localStorage y los registros del navegador. Crear una recaída permite elegir hábito o clase. Inicio obligatorio, final opcional. El calendario muestra cada registro una sola vez en su día inicial, con ambas fechas en el detalle. La gráfica calcula la duración entre inicio y final una vez por registro; los registros abiertos no aportan tiempo y sí aportan su cantidad. Los intervalos superpuestos se suman.
 
-El tema se guarda en `ritmo-theme-v1`; en la primera visita se respeta la preferencia del sistema. Las tarjetas de resumen se retiraron para dejar espacio a una futura sección gráfica.
-
-## Navegación
-
-El menú lateral permite alternar entre `#historial` y `#habitos`. «Añadir hábito» muestra el formulario para guardar un nombre y la lista existente. En móvil, el menú se adapta a la parte superior.
-
-## Calendario y fechas
-
-Las fechas pertenecen a cada recaída, tanto al crearla como al editarla. El inicio es obligatorio; el final es opcional y no puede ser anterior al inicio ni estar en el futuro. Los registros anteriores conservan su fecha como inicio y no tienen final hasta que se editen. El calendario muestra cada recaída una sola vez en su día de inicio, y presenta las dos fechas en el detalle del mismo registro. Los hábitos guardados contienen únicamente sus nombres. La antigua clave de fechas de hábitos ya no se usa y no se aplica a las recaídas.
-
-El menú se contrae en escritorio y conserva su estado. En móvil, el logo abre un panel desde la izquierda; se cierra al seleccionar una opción, pulsar fuera, pulsar el botón de cierre o usar Escape.
-
-Registrar una recaída no añade automáticamente su nombre a la lista de hábitos. El botón «Guardar» junto al campo Hábito se habilita cuando hay texto y guarda solo el nombre, sin enviar el formulario de recaída. El desplegable muestra exclusivamente los nombres guardados. El filtro del historial incluye también los nombres usados en registros libres.
-
-## Estadísticas y clases
-
-«Estadísticas» muestra barras semanales seleccionables y un desglose por día, con filtros de clase y medida (tiempo o recaídas). El tiempo es la diferencia entre inicio y final, una vez por registro, asignada al día de inicio. Los registros sin final aportan cero tiempo y mantienen su cantidad de recaídas. Los intervalos superpuestos se suman, no se deduplican.
-
-El formulario existente permite introducir clase y subclase opcionales (Apps → Instagram). Los nombres guardados conservan estos campos en `ritmo-habit-groups-v1`; al elegirlos se rellenan automáticamente. Los registros antiguos aparecen como «Sin clase» hasta que se editen. La exportación incluye la clasificación.
-
-## Gestión de nombres y clasificación
-
-Mis hábitos tiene dos formularios independientes: «Guardar nombre» guarda exclusivamente nombres de hábitos; «Clases y subclases» guarda una clase y múltiples subclases añadidas con +. Guardar clasificación no crea nombres de hábitos. Las subclases se agregan a las existentes sin borrarlas. Los nombres guardados permanecen ocultos hasta pulsar «Ver nombres guardados». La clasificación está disponible como sugerencia al registrar o editar recaídas.
-
-## Tipo de recaída
-
-El formulario permite elegir «Registrar hábito» (nombre obligatorio) o «Registrar clase» (clase obligatoria, subclase opcional, sin pedir hábito). El modo se conserva en el registro y se restaura al editarlo. El calendario, historial y estadísticas incluyen ambos tipos.
+Mis hábitos separa el guardado de nombres del guardado de clases con múltiples subclases. Los nombres se muestran al abrir el desplegable. Los datos se exportan en JSON y no se sincronizan entre dispositivos.
