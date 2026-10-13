@@ -62,6 +62,6 @@ Registrar una recaída no añade automáticamente su nombre a la lista de hábit
 
 El formulario existente permite introducir clase y subclase opcionales (Apps → Instagram). Los nombres guardados conservan estos campos en `ritmo-habit-groups-v1`; al elegirlos se rellenan automáticamente. Los registros antiguos aparecen como «Sin clase» hasta que se editen. La exportación incluye la clasificación.
 
-## Gestión de clases
+## Gestión de nombres y clasificación
 
-Mis hábitos separa la creación de clases, la adición repetida de subclases a una clase y el guardado de hábitos. El catálogo se guarda en `ritmo-classes-v1`; incorpora las clasificaciones existentes. Los nombres guardados quedan ocultos hasta pulsar «Ver nombres guardados».
+Mis hábitos tiene dos formularios independientes: «Guardar nombre» guarda exclusivamente nombres de hábitos; «Clases y subclases» guarda una clase y múltiples subclases añadidas con +. Guardar clasificación no crea nombres de hábitos. Las subclases se agregan a las existentes sin borrarlas. Los nombres guardados permanecen ocultos hasta pulsar «Ver nombres guardados». La clasificación está disponible como sugerencia al registrar o editar recaídas.
