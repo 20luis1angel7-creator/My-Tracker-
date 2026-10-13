@@ -55,3 +55,9 @@ Las fechas pertenecen a cada recaída, tanto al crearla como al editarla. El ini
 El menú se contrae en escritorio y conserva su estado. En móvil, el logo abre un panel desde la izquierda; se cierra al seleccionar una opción, pulsar fuera, pulsar el botón de cierre o usar Escape.
 
 Registrar una recaída no añade automáticamente su nombre a la lista de hábitos. El botón «Guardar» junto al campo Hábito se habilita cuando hay texto y guarda solo el nombre, sin enviar el formulario de recaída. El desplegable muestra exclusivamente los nombres guardados. El filtro del historial incluye también los nombres usados en registros libres.
+
+## Estadísticas y clases
+
+«Estadísticas» muestra barras semanales seleccionables y un desglose por día, con filtros de clase y medida (tiempo o recaídas). El tiempo es la diferencia entre inicio y final, una vez por registro, asignada al día de inicio. Los registros sin final aportan cero tiempo y mantienen su cantidad de recaídas. Los intervalos superpuestos se suman, no se deduplican.
+
+El formulario existente permite introducir clase y subclase opcionales (Apps → Instagram). Los nombres guardados conservan estos campos en `ritmo-habit-groups-v1`; al elegirlos se rellenan automáticamente. Los registros antiguos aparecen como «Sin clase» hasta que se editen. La exportación incluye la clasificación.

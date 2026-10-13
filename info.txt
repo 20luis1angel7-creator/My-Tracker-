@@ -11,7 +11,7 @@
 
 
 
--en el calendario si le doy doble click pueda guardar o registrarlo
+-
 -registrar tiempos que paso en las apps del cell
 -poder agregar habitos, cosas que hago por primera vez o no pero para que vea que puedo hacer muchas cosas
 -que muestre una grafica como en el celular de las apps
