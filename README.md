@@ -65,3 +65,7 @@ Mis hábitos separa el guardado de nombres del guardado de clases con múltiples
 ## Puerto ocupado y Ctrl+Z
 
 Ctrl+Z suspende el proceso y mantiene su puerto ocupado. Usa `fg` y después Ctrl+C para cerrarlo. Sin PORT explícito, el servidor prueba los puertos 8080–8100 hasta encontrar uno disponible y muestra la URL real. Si especificas PORT, respeta ese puerto e informa claramente si está ocupado.
+
+## Tracker mensual
+
+El menú Tracker aparece debajo de Calendario. Permite crear hábitos diarios, definir metas mensuales (1–31 días), marcar o desmarcar días y consultar completados, porcentaje y rachas del mes. Las fechas futuras están deshabilitadas. Los datos se guardan en `ritmo-tracker-v1`; las marcas se conservan al cambiar de mes y al recargar. En móvil la tabla se desplaza horizontalmente.

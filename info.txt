@@ -23,5 +23,5 @@
 -investigar preguntas
 -los datos se guarden y lean en excel
 -hacer un tracker de habito (hacer que pueda macar habitos dia a dia, como lo que me salen en excel)
--en la grafica que se pueda ver por mes, semana, etc
--
++en la grafica que se pueda ver por mes, semana, etc
+-que en la grafica pueda filtrar

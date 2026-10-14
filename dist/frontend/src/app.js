@@ -184,15 +184,15 @@ $('entryDialog').addEventListener('keydown', event => { if (event.key === 'Escap
 } });
 $('savedHabits').onclick = event => { const button = event.target.closest('[data-habit]'); if (button)
     openForm(null, button.dataset.habit); };
-function navigate(view, focus = false) { const copy = { history: ['Tu espacio para avanzar', 'Registra lo que pasó, reflexiona y sigue a tu ritmo.'], habits: ['Un cambio empieza aquí', 'Guarda los hábitos que quieres trabajar para tenerlos siempre a mano.'], stats: ['Tu actividad, en perspectiva', 'Consulta tus tiempos y recaídas por clase y subclase.'], calendar: ['Mira tu recorrido', 'Explora tus registros y sus fechas, un día a la vez.'] }[view]; $('viewHeading').textContent = copy[0]; $('viewDescription').textContent = copy[1]; for (const [id, value] of [['habitsView', 'habits'], ['historyView', 'history'], ['calendarView', 'calendar'], ['statsView', 'stats']])
-    $(id).hidden = view !== value; $('pageTitle').textContent = { habits: 'Añadir hábito', history: 'Historial', calendar: 'Calendario', stats: 'Estadísticas' }[view]; document.querySelectorAll('[data-view]').forEach(link => { const active = link.dataset.view === view; link.classList.toggle('active', active); if (active)
+function navigate(view, focus = false) { const copy = { history: ['Tu espacio para avanzar', 'Registra lo que pasó, reflexiona y sigue a tu ritmo.'], habits: ['Un cambio empieza aquí', 'Guarda los hábitos que quieres trabajar para tenerlos siempre a mano.'], tracker: ['Constancia, un día a la vez', 'Marca tus hábitos diarios y sigue tu progreso mensual.'], stats: ['Tu actividad, en perspectiva', 'Consulta tus tiempos y recaídas por clase y subclase.'], calendar: ['Mira tu recorrido', 'Explora tus registros y sus fechas, un día a la vez.'] }[view]; $('viewHeading').textContent = copy[0]; $('viewDescription').textContent = copy[1]; for (const [id, value] of [['habitsView', 'habits'], ['historyView', 'history'], ['calendarView', 'calendar'], ['statsView', 'stats'], ['trackerView', 'tracker']])
+    $(id).hidden = view !== value; $('pageTitle').textContent = { habits: 'Añadir hábito', history: 'Historial', calendar: 'Calendario', stats: 'Estadísticas', tracker: 'Tracker' }[view]; document.querySelectorAll('[data-view]').forEach(link => { const active = link.dataset.view === view; link.classList.toggle('active', active); if (active)
     link.setAttribute('aria-current', 'page');
 else
     link.removeAttribute('aria-current'); }); if (focus)
     $('habitName').focus(); if (view === 'calendar')
     renderCalendar(); if (view === 'stats')
     renderStatistics(); }
-function route() { navigate({ '#habitos': 'habits', '#calendario': 'calendar', '#estadisticas': 'stats' }[location.hash] || 'history'); }
+function route() { navigate({ '#habitos': 'habits', '#calendario': 'calendar', '#estadisticas': 'stats', '#tracker': 'tracker' }[location.hash] || 'history'); }
 window.addEventListener('hashchange', route);
 document.querySelectorAll('[data-view]').forEach(link => link.addEventListener('click', () => navigate(link.dataset.view, link.dataset.view === 'habits')));
 route();
@@ -334,4 +334,5 @@ $('deleteDetails').onclick = () => { const entry = entries.find(e => e.id === de
 $('recordDetails').addEventListener('click', event => { if (event.target !== $('recordDetails'))
     return; const r = $('recordDetails').getBoundingClientRect(); if (event.clientX < r.left || event.clientX > r.right || event.clientY < r.top || event.clientY > r.bottom)
     $('recordDetails').close(); });
+import './tracker.js';
 //# sourceMappingURL=app.js.map
