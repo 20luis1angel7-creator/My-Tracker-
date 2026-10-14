@@ -24,4 +24,5 @@ export function trackerSummary(habit, month, today = new Date()) {
     }
     return { completed, progress: Math.min(100, Math.round(completed / Math.min(habit.goal, days) * 100)), current, longest };
 }
+export function trackerDailyTotals(habits, month) { return Array.from({ length: new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate() }, (_, i) => { const date = dateKey(new Date(month.getFullYear(), month.getMonth(), i + 1)); const marked = habits.filter(h => h.checks.includes(date)).length; return { date, day: i + 1, marked, unmarked: habits.length - marked, percentage: habits.length ? Math.round(marked / habits.length * 100) : 0 }; }); }
 //# sourceMappingURL=tracker.js.map
