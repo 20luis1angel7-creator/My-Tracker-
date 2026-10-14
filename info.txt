@@ -16,7 +16,7 @@
 
 
 
--cambiar codigo a TS
++cambiar codigo a TS
 -buscar una UI mejor
 -poder registrar apps en el grafico con escaneo
 

@@ -5,6 +5,7 @@ const $ = (id) => { const element = document.getElementById(id); if (!element)
     throw new Error(`Missing element: ${id}`); return element; };
 let entryMode = 'habit';
 let entries = [], savedHabits = [], editing = null, storageError = false, timer;
+let detailId = null;
 let historyPage = 1;
 const HISTORY_PAGE_SIZE = 10;
 let draftSubclasses = [];
@@ -92,7 +93,7 @@ catch {
     toast('No se pudo guardar. Comprueba que el navegador permite almacenamiento local.');
     return false;
 } }
-function recordCard(e, editable = false) { const name = 'habit' in e ? e.habit : e.name; const format = (value) => new Intl.DateTimeFormat('es', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)); return `<article class="entry record-card" data-id="${esc(e.id)}"><div class="record-header"><h3>${esc(name)}${(e.category || e.subcategory) ? `<small class="record-class">${esc([e.category, e.subcategory].filter(Boolean).join(' / '))}</small>` : ''}</h3><span class="badge">${e.count} ${e.count === 1 ? 'vez' : 'veces'}</span>${editable ? `<div class="entry-actions"><button data-action="edit" class="secondary" aria-label="Editar registro de ${esc(name)}">Editar</button><button data-action="delete" class="icon" aria-label="Eliminar registro de ${esc(name)}" title="Eliminar">×</button></div>` : ''}</div><div class="record-meta"><div><span>Inicio</span><time datetime="${esc(e.occurredAt)}">${format(e.occurredAt)}</time></div><div><span>Final</span>${e.endedAt ? `<time datetime="${esc(e.endedAt)}">${format(e.endedAt)}</time>` : '<span class="record-value">Sin fecha final</span>'}</div></div>${e.description || e.comment ? `<div class="record-notes">${e.description ? `<div><h4>Descripción</h4><p>${esc(e.description)}</p></div>` : ''}${e.comment ? `<div><h4>Comentario / reflexión</h4><p>${esc(e.comment)}</p></div>` : ''}</div>` : ''}</article>`; }
+function recordCard(e, editable = false) { const name = 'habit' in e ? e.habit : e.name; const format = (value) => new Intl.DateTimeFormat('es', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)); return `<article class="entry record-card" data-id="${esc(e.id)}"><div class="record-header"><h3>${editable ? `<button type="button" class="record-name" data-action="details" aria-label="Ver detalle de ${esc(name)}">${esc(name)}</button>` : esc(name)}${(e.category || e.subcategory) ? `<small class="record-class">${esc([e.category, e.subcategory].filter(Boolean).join(' / '))}</small>` : ''}</h3><span class="badge">${e.count} ${e.count === 1 ? 'vez' : 'veces'}</span></div><div class="record-meta"><div><span>Inicio</span><time datetime="${esc(e.occurredAt)}">${format(e.occurredAt)}</time></div><div><span>Final</span>${e.endedAt ? `<time datetime="${esc(e.endedAt)}">${format(e.endedAt)}</time>` : '<span class="record-value">Sin fecha final</span>'}</div></div>${!editable && (e.description || e.comment) ? `<div class="record-notes">${e.description ? `<div><h4>Descripción</h4><p>${esc(e.description)}</p></div>` : ''}${e.comment ? `<div><h4>Comentario / reflexión</h4><p>${esc(e.comment)}</p></div>` : ''}</div>` : ''}</article>`; }
 function render() { const selected = $('habitFilter').value; const habitSelected = $('habit').value; const habits = [...new Map([...savedHabits, ...entries.map(e => e.habit)].map(name => [habitKey(name), name])).entries()].sort((a, b) => a[1].localeCompare(b[1], 'es')); $('habitFilter').innerHTML = '<option value="">Todos los hábitos</option>' + habits.map(([key, name]) => `<option value="${esc(key)}">${esc(name)}</option>`).join(''); $('habitFilter').value = habits.some(([key]) => key === selected) ? selected : ''; $('habit').value = habitSelected; renderHabitDropdown(); $('savedHabits').innerHTML = savedHabits.length ? savedHabits.map(name => `<div class="habit-card"><button type="button" class="habit-chip" data-habit="${esc(name)}" title="Registrar una recaída de este hábito">${esc(name)}${habitGroups[habitKey(name)]?.category ? `<small class="record-class">${esc([habitGroups[habitKey(name)].category, habitGroups[habitKey(name)].subcategory].filter(Boolean).join(' / '))}</small>` : ''} <span>＋</span></button></div>`).join('') : '<p class="habit-empty">Todavía no tienes hábitos guardados. Añade el primero arriba.</p>'; const filtered = filterEntries(entries, $('search').value, $('habitFilter').value); const totalPages = Math.max(1, Math.ceil(filtered.length / HISTORY_PAGE_SIZE)); historyPage = Math.min(historyPage, totalPages); const start = (historyPage - 1) * HISTORY_PAGE_SIZE; const visible = filtered.slice(start, start + HISTORY_PAGE_SIZE); $('entries').innerHTML = visible.length ? visible.map(e => recordCard(e, true)).join('') : `<div class="empty"><span>↗</span><h3>${entries.length ? 'No hay coincidencias' : 'Empieza con un registro'}</h3><p>${entries.length ? 'Prueba otra búsqueda o cambia el filtro.' : 'Añade el hábito, cuántas veces ocurrió y lo que quieras recordar.'}</p>${entries.length ? '' : '<button class="primary" id="firstEntry">Registrar mi primera recaída</button>'}</div>`; document.getElementById('firstEntry')?.addEventListener('click', () => openForm()); $('results').textContent = filtered.length ? `${start + 1}–${start + visible.length} de ${filtered.length} registros` : '0 registros'; $('historyPage').textContent = `${historyPage} / ${totalPages}`; $('prevHistory').disabled = historyPage === 1; $('nextHistory').disabled = historyPage === totalPages; renderCalendar(); renderStatistics(); renderClassOptions(); renderClassManager(); }
 function localDateValue() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}T${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; }
 function openForm(entry, habit) { editing = entry?.id ?? null; $('entryForm').reset(); $('dialogTitle').textContent = entry ? 'Editar registro' : 'Registrar recaída'; $('occurredAt').value = localDateValue(); if (entry)
@@ -122,10 +123,8 @@ $('nextHistory').onclick = () => { if (historyPage < Math.ceil(filterEntries(ent
 } };
 $('entries').onclick = event => { const button = event.target.closest('[data-action]'); if (!button)
     return; const entry = entries.find(e => e.id === button.closest('[data-id]')?.dataset.id); if (!entry)
-    return; if (button.dataset.action === 'edit')
-    openForm(entry);
-else if (confirm(`¿Eliminar este registro de «${entry.habit}» (${entry.count} veces)?`) && commit(entries.filter(e => e.id !== entry.id)))
-    toast('Registro eliminado'); };
+    return; if (button.dataset.action === 'details')
+    showDetails(entry); };
 $('export').onclick = () => { const blob = new Blob([JSON.stringify({ application: 'Ritmo', version: 4, exportedAt: new Date().toISOString(), habits: savedHabits, habitGroups, classCatalog, entries }, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = `ritmo-registros-${localDateValue().slice(0, 10)}.json`; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); toast('Copia de los registros exportada'); };
 render();
 $('occurredAt').onchange = () => { $('endedAt').min = $('occurredAt').value; };
@@ -318,4 +317,18 @@ function setEntryMode(mode) { entryMode = mode; const isClass = mode === 'class'
 $('modeHabit').onclick = () => { setEntryMode('habit'); $('habit').focus(); };
 $('modeClass').onclick = () => { setEntryMode('class'); $('category').focus(); };
 setEntryMode('habit');
+function showDetails(entry) { detailId = entry.id || null; $('detailsTitle').textContent = entry.habit; $('detailsContent').innerHTML = recordCard(entry) + (!entry.description && !entry.comment ? '<p class="form-note">Sin descripción ni comentario.</p>' : ''); $('recordDetails').showModal(); }
+$('closeDetails').onclick = () => { $('recordDetails').close(); };
+$('editDetails').onclick = () => { const entry = entries.find(e => e.id === detailId); if (entry) {
+    $('recordDetails').close();
+    openForm(entry);
+} };
+$('deleteDetails').onclick = () => { const entry = entries.find(e => e.id === detailId); if (entry && confirm(`¿Eliminar el registro de «${entry.habit}»?`) && commit(entries.filter(e => e.id !== detailId))) {
+    $('recordDetails').close();
+    detailId = null;
+    toast('Registro eliminado');
+} };
+$('recordDetails').addEventListener('click', event => { if (event.target !== $('recordDetails'))
+    return; const r = $('recordDetails').getBoundingClientRect(); if (event.clientX < r.left || event.clientX > r.right || event.clientY < r.top || event.clientY > r.bottom)
+    $('recordDetails').close(); });
 //# sourceMappingURL=app.js.map

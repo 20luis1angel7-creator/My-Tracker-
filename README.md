@@ -61,3 +61,7 @@ Mis hábitos separa el guardado de nombres del guardado de clases con múltiples
 ## Verificación de interfaz
 
 `npm test` también ejecuta flujos del frontend en un DOM simulado: guardar nombres y múltiples subclases, crear y editar ambos tipos de recaída, buscar, eliminar, navegar por calendario y estadísticas, cambiar tema y abrir/cerrar el menú móvil. Esto verifica eventos y persistencia; no sustituye una revisión visual en un navegador real.
+
+## Puerto ocupado y Ctrl+Z
+
+Ctrl+Z suspende el proceso y mantiene su puerto ocupado. Usa `fg` y después Ctrl+C para cerrarlo. Sin PORT explícito, el servidor prueba los puertos 8080–8100 hasta encontrar uno disponible y muestra la URL real. Si especificas PORT, respeta ese puerto e informa claramente si está ocupado.
