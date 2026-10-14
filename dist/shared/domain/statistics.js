@@ -11,4 +11,10 @@ export function breakdown(entries, metric = 'time') { const groups = new Map(); 
     row.count += e.count;
     groups.set(key, row);
 } return [...groups.values()].sort((a, b) => b.value - a.value); }
+export function periodData(entries, anchor, period, metric = 'time', category = '') {
+    if (period === 'week')
+        return weekData(entries, weekStart(anchor), metric, category);
+    const year = anchor.getFullYear(), month = anchor.getMonth();
+    return Array.from({ length: period === 'year' ? 12 : new Date(year, month + 1, 0).getDate() }, (_, i) => { const date = period === 'year' ? new Date(year, i, 1) : new Date(year, month, i + 1); const day = dateKey(date); const records = entries.filter(e => e.occurredAt.startsWith(period === 'year' ? day.slice(0, 7) : day) && (!category || (e.category || 'Sin clase') === category)); return { day, date, records, value: records.reduce((sum, e) => sum + (metric === 'time' ? durationMinutes(e) : e.count), 0) }; });
+}
 //# sourceMappingURL=statistics.js.map

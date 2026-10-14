@@ -4,6 +4,7 @@
 -hacer que el exportar se descargue en excel o pdf y no en json, poner un icono de descarga
 
 
+-quitar boton >>
 
 
 
