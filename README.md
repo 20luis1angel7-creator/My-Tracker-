@@ -50,7 +50,7 @@ Abre http://localhost:8080. `npm run build` compila TypeScript y genera `dist/`.
 - `POST /api/entries/validate`: valida un registro enviado como JSON.
 - `POST /api/statistics`: recibe `{ entries, date, metric, category }` y devuelve los siete días de la semana. `metric` acepta `time` o `count`.
 
-El backend se ejecuta en local con `npm start`. La publicación actual en Sites es estática y publica únicamente el frontend: los endpoints del backend no están desplegados ni conectados al formulario. El backend no tiene base de datos ni autenticación; calcula y valida los datos recibidos sin persistirlos.
+El backend se ejecuta en local con `npm start`. La publicación anterior en Sites es estática: los endpoints nuevos se ejecutan con el servidor local. El backend local tiene PostgreSQL, autenticación y almacenamiento por usuario. La versión publicada anteriormente en Sites conserva el comportamiento anterior hasta que se despliegue explícitamente un backend compatible.
 
 ## Datos y comportamiento
 
@@ -69,3 +69,34 @@ Ctrl+Z suspende el proceso y mantiene su puerto ocupado. Usa `fg` y después Ctr
 ## Tracker mensual
 
 El menú Tracker aparece debajo de Calendario. Permite crear hábitos diarios, definir metas mensuales (1–31 días), marcar o desmarcar días y consultar completados, porcentaje y rachas del mes. Las fechas futuras están deshabilitadas. Los datos se guardan en `ritmo-tracker-v1`; las marcas se conservan al cambiar de mes y al recargar. En móvil la tabla se desplaza horizontalmente.
+
+
+## PostgreSQL y cuentas
+
+La aplicación local ahora requiere PostgreSQL. Los cambios permanecen sin commit, sin push y sin publicación. La web de Sites anterior no se actualiza con esta integración.
+
+```bash
+npm install
+docker compose up -d postgres
+# Si aún no existe .env: copia .env.example a .env
+npm run build
+npm start
+```
+
+`DATABASE_URL` está en `.env` (ignorado por Git). El contenedor usa un volumen persistente llamado `ritmo_postgres`. El inicio crea las tablas y, solo si no existe, la cuenta `admin` con la contraseña `123456`. Cambiar `ADMIN_PASSWORD` no restablece usuarios existentes. No uses `docker compose down -v` si quieres conservar los datos.
+
+Al entrar como admin desde el mismo navegador y la misma dirección donde estaban tus datos, se importan registros, hábitos, clases y tracker en una transacción. La copia original de localStorage no se borra y se crea además `ritmo-original-backup-v1`. Cada copia se identifica por una huella: volver a entrar no la importa de nuevo ni resucita registros eliminados. Las cuentas nuevas empiezan vacías y no importan tus datos antiguos.
+
+Si antes usabas localhost:8080, vuelve a entrar en esa misma dirección: localhost, 127.0.0.1, distintos puertos y Sites son orígenes separados y no comparten localStorage. La aplicación no puede leer los datos de otro origen. La migración real se completa cuando abres la app e inicias sesión como admin; el asistente no puede leer el localStorage de tu navegador desde los archivos del proyecto.
+
+Los cambios se sincronizan con PostgreSQL y el estado aparece en la cabecera. Una copia por usuario y una cola de operaciones pendientes se conservan en el navegador para recuperarse de cortes de conexión. Pulsa el indicador para reintentar; cerrar sesión espera a que no queden cambios pendientes.
+
+Las contraseñas se guardan con scrypt y sal aleatoria. Las sesiones usan cookies HttpOnly, SameSite=Strict y tokens almacenados como hash. Para un despliegue HTTPS configura `COOKIE_SECURE=true`. Estos datos no se guardan en el repositorio.
+
+Pruebas de integración PostgreSQL (utiliza una base exclusiva para pruebas):
+
+```bash
+RITMO_TEST_DATABASE_URL=postgresql://usuario:clave@localhost/base_pruebas npm test
+```
+
+La prueba crea usuarios temporales e importa datos de prueba en la cuenta admin de esa base. No debe apuntar a tus datos reales.

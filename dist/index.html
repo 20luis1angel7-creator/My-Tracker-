@@ -10,7 +10,40 @@
     <title>Ritmo · Registro de hábitos</title>
     <link rel="stylesheet" href="frontend/src/styles/styles.css" />
   </head>
-  <body>
+  <body class="auth-pending">
+    <section id="authView" class="auth-view">
+      <div class="auth-card">
+        <a class="brand" href="./"><span>r.</span>ritmo</a>
+        <h1 id="authTitle">Iniciar sesión</h1>
+        <p>Tus hábitos y registros, en tu cuenta.</p>
+        <form id="authForm">
+          <label
+            >Usuario<input
+              id="authUsername"
+              autocomplete="username"
+              minlength="3"
+              maxlength="32"
+              required /></label
+          ><label
+            >Contraseña<input
+              id="authPassword"
+              type="password"
+              autocomplete="current-password"
+              minlength="6"
+              maxlength="128"
+              required
+          /></label>
+          <p id="authError" role="status"></p>
+          <button id="authSubmit" class="primary" type="submit">Entrar</button>
+        </form>
+        <button id="authSwitch" class="secondary" type="button">
+          Crear una cuenta</button
+        ><small
+          >Los datos anteriores de este navegador se importan solo al iniciar
+          sesión como admin. La copia original se conserva.</small
+        >
+      </div>
+    </section>
     <button
       id="menuBackdrop"
       class="menu-backdrop"
@@ -84,7 +117,13 @@
           <span>r.</span></button
         ><span id="pageTitle" class="page-title">Historial</span>
         <div class="header-actions">
-          <span class="privacy">● Datos en este navegador</span
+          <span id="accountUser"></span
+          ><button id="accountSync" type="button" class="secondary">
+            Conectando…</button
+          ><button id="logoutButton" type="button" class="secondary">
+            Salir
+          </button>
+          <span class="privacy">● Cuenta personal</span
           ><button id="themeToggle" class="secondary" aria-pressed="false">
             ☾ Modo oscuro
           </button>
@@ -376,8 +415,7 @@
           </p>
         </section>
         <p class="footnote">
-          Tus datos se guardan solo en este navegador. Exporta una copia para
-          conservarlos.
+          Tus datos se guardan en tu cuenta. Puedes exportar una copia cuando quieras.
         </p>
       </main>
     </div>
@@ -577,7 +615,10 @@
         <div>
           <select id="dateHour" aria-label="Hora"></select
           ><span>:</span
-          ><select id="dateMinute" aria-label="Minutos"></select><select id="datePeriod" aria-label="AM o PM"><option value="AM">AM</option><option value="PM">PM</option></select
+          ><select id="dateMinute" aria-label="Minutos"></select
+          ><select id="datePeriod" aria-label="AM o PM">
+            <option value="AM">AM</option>
+            <option value="PM">PM</option></select
           ><button id="dateNow" type="button" class="secondary">Ahora</button>
         </div>
       </div>
@@ -591,6 +632,6 @@
       </div>
     </dialog>
     <div class="toast" id="toast" role="status"></div>
-    <script type="module" src="frontend/src/app.js"></script>
+    <script type="module" src="frontend/src/auth/bootstrap.js"></script>
   </body>
 </html>

@@ -1,3 +1,4 @@
+import { accountStorage } from "./auth/account-storage.js";
 import { syncDateFields } from "./date-picker.js";
 import { formatDuration, weekStart, periodData, breakdown, } from "./lib/statistics.js";
 import { dateKey, eventsForDay } from "./lib/calendar.js";
@@ -29,14 +30,14 @@ function toast(message) {
     timer = setTimeout(() => element.classList.remove("visible"), 4500);
 }
 try {
-    entries = loadEntries(localStorage);
+    entries = loadEntries(accountStorage);
 }
 catch {
     storageError = true;
     toast("No se pudieron leer los datos guardados. No se sobrescribirán.");
 }
 try {
-    const raw = localStorage.getItem(HABITS_KEY);
+    const raw = accountStorage.getItem(HABITS_KEY);
     savedHabits = raw ? JSON.parse(raw) : [];
     if (!Array.isArray(savedHabits) ||
         savedHabits.some((h) => typeof h !== "string" || !h.trim()))
@@ -45,14 +46,14 @@ try {
         ...new Map(savedHabits.map((h) => [habitKey(h), h.trim()])).values(),
     ];
     if (!storageError)
-        localStorage.setItem(HABITS_KEY, JSON.stringify(savedHabits));
+        accountStorage.setItem(HABITS_KEY, JSON.stringify(savedHabits));
 }
 catch {
     storageError = true;
     toast("No se pudieron leer o guardar los hábitos. Tus datos no se sobrescribirán.");
 }
 try {
-    habitGroups = JSON.parse(localStorage.getItem(GROUPS_KEY) || "{}");
+    habitGroups = JSON.parse(accountStorage.getItem(GROUPS_KEY) || "{}");
     if (!habitGroups ||
         Array.isArray(habitGroups) ||
         typeof habitGroups !== "object" ||
@@ -66,7 +67,7 @@ catch {
     toast("No se pudieron leer las clases guardadas. No se sobrescribirán.");
 }
 try {
-    classCatalog = JSON.parse(localStorage.getItem(CATALOG_KEY) || "{}");
+    classCatalog = JSON.parse(accountStorage.getItem(CATALOG_KEY) || "{}");
     if (!classCatalog ||
         Array.isArray(classCatalog) ||
         typeof classCatalog !== "object" ||
@@ -92,7 +93,7 @@ catch {
 }
 let dark = window.matchMedia("(prefers-color-scheme: dark)").matches;
 try {
-    const theme = localStorage.getItem(THEME_KEY);
+    const theme = accountStorage.getItem(THEME_KEY);
     if (theme)
         dark = theme === "dark";
 }
@@ -107,7 +108,7 @@ $("themeToggle").onclick = () => {
     dark = !dark;
     applyTheme();
     try {
-        localStorage.setItem(THEME_KEY, dark ? "dark" : "light");
+        accountStorage.setItem(THEME_KEY, dark ? "dark" : "light");
     }
     catch {
         toast("El tema cambiará solo durante esta sesión.");
@@ -120,7 +121,7 @@ function commit(next) {
         return false;
     }
     try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+        accountStorage.setItem(STORAGE_KEY, JSON.stringify(next));
         entries = next;
         render();
         return true;
@@ -388,16 +389,16 @@ function saveHabitName(value, category = "", subcategory = "") {
                 subcategory: subcategory.trim(),
             },
         };
-        const previous = localStorage.getItem(GROUPS_KEY);
-        localStorage.setItem(GROUPS_KEY, JSON.stringify(groups));
+        const previous = accountStorage.getItem(GROUPS_KEY);
+        accountStorage.setItem(GROUPS_KEY, JSON.stringify(groups));
         try {
-            localStorage.setItem(HABITS_KEY, JSON.stringify(next));
+            accountStorage.setItem(HABITS_KEY, JSON.stringify(next));
         }
         catch (error) {
             if (previous === null)
-                localStorage.removeItem(GROUPS_KEY);
+                accountStorage.removeItem(GROUPS_KEY);
             else
-                localStorage.setItem(GROUPS_KEY, previous);
+                accountStorage.setItem(GROUPS_KEY, previous);
             throw error;
         }
         savedHabits = next;
@@ -535,7 +536,7 @@ document
 route();
 let collapsed = false;
 try {
-    collapsed = localStorage.getItem("ritmo-menu-collapsed") === "true";
+    collapsed = accountStorage.getItem("ritmo-menu-collapsed") === "true";
 }
 catch { }
 function applyMenu() {
@@ -554,7 +555,7 @@ $("sidebarToggle").onclick = () => {
     collapsed = !collapsed;
     applyMenu();
     try {
-        localStorage.setItem("ritmo-menu-collapsed", String(collapsed));
+        accountStorage.setItem("ritmo-menu-collapsed", String(collapsed));
     }
     catch {
         toast("El estado del menú se conservará solo en esta sesión.");
@@ -910,7 +911,7 @@ $("classificationForm").onsubmit = (event) => {
     ];
     const next = { ...classCatalog, [key]: { name: category, subclasses } };
     try {
-        localStorage.setItem(CATALOG_KEY, JSON.stringify(next));
+        accountStorage.setItem(CATALOG_KEY, JSON.stringify(next));
         classCatalog = next;
         $("classificationForm").reset();
         draftSubclasses = [];

@@ -1,0 +1,96 @@
+import { ACCOUNT_KEYS, } from "../../../shared/account-data.js";
+import { activateAccount, flushAccount } from "./account-storage.js";
+const get = (id) => document.getElementById(id);
+let mode = "login";
+async function api(path, body) {
+    const response = await fetch(path, body === undefined
+        ? {}
+        : {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify(body),
+        });
+    const data = await response.json();
+    if (!response.ok)
+        throw Error(data.error || "Inicia sesión para continuar.");
+    return data;
+}
+async function enter(user) {
+    let data;
+    if (user.username === "admin") {
+        const previous = {};
+        for (const key of ACCOUNT_KEYS) {
+            const value = localStorage.getItem(key);
+            if (value !== null)
+                previous[key] = value;
+        }
+        // Mantener una copia inmutable antes de importar. No se eliminan las claves originales.
+        if (Object.keys(previous).length) {
+            const backupKey = "ritmo-original-backup-v1";
+            if (!localStorage.getItem(backupKey))
+                localStorage.setItem(backupKey, JSON.stringify(previous));
+            data = (await api("/api/data/import", { data: previous })).data;
+        }
+        else
+            data = (await api("/api/data")).data;
+    }
+    else
+        data = (await api("/api/data")).data;
+    await activateAccount(user.id, data);
+    get("accountUser").textContent = user.username;
+    await import("../app.js");
+    get("authView").hidden = true;
+    document.body.classList.remove("auth-pending");
+}
+get("authSwitch").onclick = () => {
+    mode = mode === "login" ? "register" : "login";
+    get("authTitle").textContent =
+        mode === "login" ? "Iniciar sesión" : "Crear cuenta";
+    get("authSubmit").textContent = mode === "login" ? "Entrar" : "Registrarme";
+    get("authSwitch").textContent =
+        mode === "login" ? "Crear una cuenta" : "Ya tengo una cuenta";
+    get("authError").textContent = "";
+};
+get("authForm").onsubmit = async (e) => {
+    e.preventDefault();
+    const button = get("authSubmit");
+    button.disabled = true;
+    get("authError").textContent = "";
+    try {
+        const result = await api(`/api/auth/${mode}`, {
+            username: get("authUsername").value,
+            password: get("authPassword").value,
+        });
+        await enter(result.user);
+    }
+    catch (error) {
+        get("authError").textContent = error.message;
+    }
+    finally {
+        button.disabled = false;
+    }
+};
+get("accountSync").onclick = () => void flushAccount();
+get("logoutButton").onclick = async () => {
+    if (!(await flushAccount())) {
+        alert("Hay cambios pendientes. Comprueba la conexión y pulsa Reintentar antes de cerrar sesión.");
+        return;
+    }
+    try {
+        await api("/api/auth/logout", {});
+        location.reload();
+    }
+    catch {
+        alert("No se pudo cerrar sesión. Vuelve a intentarlo.");
+    }
+};
+try {
+    const result = await api("/api/auth/me");
+    await enter(result.user);
+}
+catch (error) {
+    get("authError").textContent = error.message.includes("Inicia sesión")
+        ? ""
+        : error.message;
+}
+//# sourceMappingURL=bootstrap.js.map

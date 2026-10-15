@@ -1,0 +1,17 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ritmo
+      POSTGRES_PASSWORD: ritmo_local
+      POSTGRES_DB: ritmo
+    ports:
+      - "127.0.0.1:55432:5432"
+    volumes:
+      - ritmo_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ritmo"]
+      interval: 5s
+      retries: 10
+volumes:
+  ritmo_postgres:

@@ -1,3 +1,17 @@
+import { loadEnvFile } from "node:process";
+try {
+  loadEnvFile();
+} catch (error) {
+  if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+}
+const { initializeDatabase } = await import("./db/database.js");
+const { handleAccountRoutes } = await import("./auth/routes.js");
+try {
+  await initializeDatabase();
+} catch (error) {
+  console.error("PostgreSQL:", (error as Error).message);
+  process.exit(1);
+}
 import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
 import { resolve, extname } from "node:path";
@@ -11,7 +25,10 @@ const mime: Record<string, string> = {
 };
 const server = createServer(async (req, res) => {
   try {
-    const url = new URL(req.url || "/", "http://localhost");
+    const url = new URL(
+      req.url || "/",
+      `http://${req.headers.host || "localhost"}`,
+    );
     if (url.pathname.startsWith("/api/")) {
       const chunks: Buffer[] = [];
       let size = 0;
@@ -26,13 +43,21 @@ const server = createServer(async (req, res) => {
       }
       const request = new Request(url, {
         method: req.method,
-        headers: { "content-type": "application/json" },
+        headers: {
+          "content-type": "application/json",
+          cookie: req.headers.cookie || "",
+          origin: req.headers.origin || "",
+        },
         ...(["GET", "HEAD"].includes(req.method || "GET")
           ? {}
           : { body: Buffer.concat(chunks).toString() }),
       });
-      const response = await handleApi(request);
-      res.writeHead(response.status, { "content-type": "application/json" });
+      const response =
+        (await handleAccountRoutes(request)) || (await handleApi(request));
+      res.writeHead(
+        response.status,
+        Object.fromEntries(response.headers.entries()),
+      );
       res.end(await response.text());
       return;
     }
@@ -51,7 +76,18 @@ const server = createServer(async (req, res) => {
       "content-type": mime[extname(path)] || "application/octet-stream",
     });
     res.end(body);
-  } catch {
+  } catch (error) {
+    if ((req.url || "").startsWith("/api/")) {
+      console.error("API:", (error as Error).message);
+      res.writeHead(503, { "content-type": "application/json" });
+      res.end(
+        JSON.stringify({
+          error:
+            "No se pudo acceder a PostgreSQL. Tus datos locales se conservan.",
+        }),
+      );
+      return;
+    }
     res.writeHead(404);
     res.end("No encontrado");
   }

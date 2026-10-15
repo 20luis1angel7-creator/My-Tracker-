@@ -6,12 +6,17 @@
     "typecheck": "tsc --noEmit",
     "build": "tsc && node build/scripts/build.js",
     "test": "npm run build && node --test build/tests/*.test.js",
-    "start": "node build/backend/src/server.js"
+    "start": "node build/backend/src/server.js",
+    "prestart": "npm run build"
   },
   "devDependencies": {
     "@types/jsdom": "^30.0.0",
     "@types/node": "^26.6.5",
+    "@types/pg": "^8.23.1",
     "jsdom": "^29.1.1",
     "typescript": "^7.0.2"
+  },
+  "dependencies": {
+    "pg": "^8.23.1"
   }
 }

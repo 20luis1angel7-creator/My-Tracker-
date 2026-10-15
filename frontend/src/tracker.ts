@@ -1,3 +1,4 @@
+import { accountStorage } from "./auth/account-storage.js";
 import { dateKey } from "./lib/calendar.js";
 import {
   trackerSummary,
@@ -19,7 +20,7 @@ let month = new Date(),
   habits: TrackerHabit[] = [],
   locked = false;
 try {
-  const raw = localStorage.getItem(KEY);
+  const raw = accountStorage.getItem(KEY);
   habits = raw ? JSON.parse(raw) : [];
   if (
     !Array.isArray(habits) ||
@@ -44,7 +45,7 @@ try {
 function save(next: TrackerHabit[]) {
   if (locked) return false;
   try {
-    localStorage.setItem(KEY, JSON.stringify(next));
+    accountStorage.setItem(KEY, JSON.stringify(next));
     habits = next;
     render();
     return true;

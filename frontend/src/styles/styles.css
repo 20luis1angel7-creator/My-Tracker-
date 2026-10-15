@@ -2025,3 +2025,84 @@ form textarea {
   font-size: 11px;
   padding: 10px 12px;
 }
+.auth-pending > .app-shell,
+.auth-pending > .sidebar,
+.auth-pending > .menu-backdrop {
+  display: none;
+}
+.auth-view {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+.auth-card {
+  width: min(420px, 100%);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 30px;
+  box-shadow: var(--shadow);
+}
+.auth-card .brand {
+  padding: 0;
+  margin-bottom: 28px;
+}
+.auth-card h1 {
+  font-size: 27px;
+}
+.auth-card > p,
+.auth-card small {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.7;
+}
+.auth-card small {
+  display: block;
+  margin-top: 22px;
+  font-size: 10px;
+}
+.auth-card input {
+  width: 100%;
+  margin-top: 8px;
+}
+.auth-card form .primary,
+.auth-card > .secondary {
+  width: 100%;
+  margin-top: 12px;
+}
+#authError {
+  color: #d76d6d;
+  font-size: 12px;
+}
+.sync-error {
+  color: #d76d6d !important;
+}
+#accountUser {
+  font-size: 11px;
+  font-weight: 600;
+}
+#accountSync {
+  font-size: 9px;
+  max-width: 170px;
+  white-space: normal;
+}
+@media (max-width: 760px) {
+  #accountSync {
+    max-width: 100px;
+    font-size: 8px;
+  }
+  #accountUser {
+    display: none;
+  }
+  .header-actions {
+    gap: 4px;
+  }
+  .header-actions button {
+    padding: 6px;
+  }
+  .app-shell header {
+    padding-inline: 12px;
+    gap: 7px;
+  }
+}

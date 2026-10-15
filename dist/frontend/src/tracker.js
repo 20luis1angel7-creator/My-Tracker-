@@ -1,3 +1,4 @@
+import { accountStorage } from "./auth/account-storage.js";
 import { dateKey } from "./lib/calendar.js";
 import { trackerSummary, trackerDailyTotals, } from "../../shared/domain/tracker.js";
 const KEY = "ritmo-tracker-v1";
@@ -5,7 +6,7 @@ const get = (id) => document.getElementById(id);
 const esc = (s) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c] || c);
 let month = new Date(), habits = [], locked = false;
 try {
-    const raw = localStorage.getItem(KEY);
+    const raw = accountStorage.getItem(KEY);
     habits = raw ? JSON.parse(raw) : [];
     if (!Array.isArray(habits) ||
         habits.some((h) => !h ||
@@ -27,7 +28,7 @@ function save(next) {
     if (locked)
         return false;
     try {
-        localStorage.setItem(KEY, JSON.stringify(next));
+        accountStorage.setItem(KEY, JSON.stringify(next));
         habits = next;
         render();
         return true;

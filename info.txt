@@ -4,7 +4,7 @@
 -hacer que el exportar se descargue en excel o pdf y no en json, poner un icono de descarga
 
 
--quitar boton >>
+
 
 
 
@@ -28,10 +28,11 @@
 +arregla el codigo que esta muy alargado y no se entiende
 -mejora la ui de como sale la fecha en el registro
 -mejorar el backend
+-quitar boton >>
 -poner base de datos (los datos se guarden y lean en excel)
 -hacer esta aplicacion por fase
-
-
+-que no haga un commit y hace push automáticamente
+-comando en md
 
 fase 1
 funciones lo basico
