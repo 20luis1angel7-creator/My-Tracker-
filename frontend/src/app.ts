@@ -1,3 +1,4 @@
+import { syncDateFields } from "./date-picker.js";
 import type { StatisticsPeriod } from "./lib/statistics.js";
 type View = "history" | "habits" | "calendar" | "stats" | "tracker";
 import type {
@@ -313,6 +314,7 @@ function localDateValue() {
 function openForm(entry?: Entry | null, habit?: string) {
   editing = entry?.id ?? null;
   $("entryForm").reset();
+  $("endedAt").value = "";
   $("dialogTitle").textContent = entry
     ? "Editar registro"
     : "Registrar recaída";
@@ -339,6 +341,7 @@ function openForm(entry?: Entry | null, habit?: string) {
   }
   setHabitList(false);
   updateSaveHabit();
+  syncDateFields();
   $("entryDialog").showModal();
   setEntryMode(
     entry?.type === "class" || (!entry?.type && entry?.category)

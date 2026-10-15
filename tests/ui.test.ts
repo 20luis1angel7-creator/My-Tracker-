@@ -98,6 +98,15 @@ test("Flujos de interfaz: hábitos, clases, recaídas, editar, calendario, estad
     2,
   );
   click("newEntry");
+  click("pickStart");
+  assert.equal(
+    (el("datePickerDialog") as unknown as HTMLDialogElement).open,
+    true,
+  );
+  click("applyDate");
+  click("pickEnd");
+  click("clearEndDate");
+  assert.equal(el("endedAt").value, "");
   value("habit", "Coca-Cola");
   value("occurredAt", "2026-10-10T10:00");
   value("endedAt", "2026-10-10T11:00");

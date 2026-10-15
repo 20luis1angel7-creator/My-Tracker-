@@ -1,3 +1,4 @@
+import { syncDateFields } from "./date-picker.js";
 import { formatDuration, weekStart, periodData, breakdown, } from "./lib/statistics.js";
 import { dateKey, eventsForDay } from "./lib/calendar.js";
 import { STORAGE_KEY, habitKey, validateEntry, filterEntries, loadEntries, } from "./lib/model.js";
@@ -242,6 +243,7 @@ function localDateValue() {
 function openForm(entry, habit) {
     editing = entry?.id ?? null;
     $("entryForm").reset();
+    $("endedAt").value = "";
     $("dialogTitle").textContent = entry
         ? "Editar registro"
         : "Registrar recaída";
@@ -268,6 +270,7 @@ function openForm(entry, habit) {
     }
     setHabitList(false);
     updateSaveHabit();
+    syncDateFields();
     $("entryDialog").showModal();
     setEntryMode(entry?.type === "class" || (!entry?.type && entry?.category)
         ? "class"

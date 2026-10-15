@@ -476,14 +476,33 @@
           </div>
         </div>
         <div class="form-grid entry-dates">
-          <label
-            >Fecha de inicio<input
-              id="occurredAt"
-              type="datetime-local"
-              required /></label
-          ><label
-            >Fecha final (opcional)<input id="endedAt" type="datetime-local"
-          /></label>
+          <div class="date-field">
+            <label for="pickStart">Fecha de inicio</label
+            ><input id="occurredAt" type="hidden" /><button
+              id="pickStart"
+              type="button"
+              class="date-field-button"
+              aria-haspopup="dialog"
+            >
+              <span aria-hidden="true">▦</span
+              ><span id="startDateText">Seleccionar fecha y hora</span
+              ><span aria-hidden="true">⌄</span>
+            </button>
+          </div>
+          <div class="date-field">
+            <label for="pickEnd"
+              >Fecha final <span class="optional-label">Opcional</span></label
+            ><input id="endedAt" type="hidden" /><button
+              id="pickEnd"
+              type="button"
+              class="date-field-button"
+              aria-haspopup="dialog"
+            >
+              <span aria-hidden="true">▦</span
+              ><span id="endDateText">Sin fecha final</span
+              ><span aria-hidden="true">⌄</span>
+            </button>
+          </div>
         </div>
         <label
           >Descripción<textarea
@@ -508,6 +527,68 @@
           ><button type="submit" class="primary">Guardar registro</button>
         </div>
       </form>
+    </dialog>
+    <dialog
+      id="datePickerDialog"
+      class="date-picker"
+      aria-labelledby="datePickerTitle"
+    >
+      <div class="dialog-heading">
+        <div>
+          <p class="date-picker-eyebrow">FECHA Y HORA</p>
+          <h2 id="datePickerTitle">Fecha de inicio</h2>
+        </div>
+        <button
+          id="closeDatePicker"
+          type="button"
+          class="icon"
+          aria-label="Cerrar calendario"
+        >
+          ×
+        </button>
+      </div>
+      <div class="date-picker-month">
+        <button
+          id="datePrev"
+          type="button"
+          class="secondary"
+          aria-label="Mes anterior"
+        >
+          ‹</button
+        ><strong id="dateMonth"></strong
+        ><button
+          id="dateNext"
+          type="button"
+          class="secondary"
+          aria-label="Mes siguiente"
+        >
+          ›
+        </button>
+      </div>
+      <div class="date-picker-weekdays">
+        <span>L</span><span>M</span><span>X</span><span>J</span><span>V</span
+        ><span>S</span><span>D</span>
+      </div>
+      <div id="dateDays" class="date-picker-days"></div>
+      <div class="date-picker-time">
+        <label for="dateHour"
+          >Hora <span class="optional-label">24 h</span></label
+        >
+        <div>
+          <select id="dateHour" aria-label="Hora"></select
+          ><span>:</span
+          ><select id="dateMinute" aria-label="Minutos"></select
+          ><button id="dateNow" type="button" class="secondary">Ahora</button>
+        </div>
+      </div>
+      <p id="datePickerError" class="date-picker-error" role="status"></p>
+      <div class="dialog-actions">
+        <button id="clearEndDate" type="button" class="secondary">
+          Sin fecha final</button
+        ><button id="applyDate" type="button" class="primary">
+          Aplicar fecha
+        </button>
+      </div>
     </dialog>
     <div class="toast" id="toast" role="status"></div>
     <script type="module" src="frontend/src/app.js"></script>
