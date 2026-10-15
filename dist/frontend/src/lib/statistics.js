@@ -1,2 +1,2 @@
-export * from '../../../shared/domain/statistics.js';
+export * from "../../../shared/domain/statistics.js";
 //# sourceMappingURL=statistics.js.map

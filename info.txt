@@ -26,3 +26,5 @@
 +en la grafica que se pueda ver por mes, semana, etc
 -que en la grafica pueda filtrar
 -mejorar la ui de registro
++arregla el codigo que esta muy alargado y no se entiende
+-mejora la ui de como sale la fecha en el registro
