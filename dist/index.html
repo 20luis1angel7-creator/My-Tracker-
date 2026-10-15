@@ -1,9 +1,515 @@
 <!doctype html>
-<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Registra recaídas, describe lo que pasó y reflexiona sobre tus hábitos."><title>Ritmo · Registro de hábitos</title><link rel="stylesheet" href="frontend/src/styles/styles.css"></head><body>
-<button id="menuBackdrop" class="menu-backdrop" aria-label="Cerrar menú" hidden></button><aside id="sidebar" class="sidebar"><a href="./" class="brand"><span>r.</span><b class="brand-name">ritmo</b></a><button id="sidebarToggle" class="secondary sidebar-toggle" aria-label="Contraer menú" aria-expanded="true">«</button><p class="menu-label">MI ESPACIO</p><nav aria-label="Menú principal"><a href="#historial" class="menu-link" data-view="history" aria-label="Historial" title="Historial"><span aria-hidden="true">▤</span><b class="nav-text">Historial</b></a><a href="#habitos" class="menu-link" data-view="habits" aria-label="Añadir hábito" title="Añadir hábito"><span aria-hidden="true">＋</span><b class="nav-text">Añadir hábito</b></a><a href="#calendario" class="menu-link" data-view="calendar" aria-label="Calendario" title="Calendario"><span aria-hidden="true">▦</span><b class="nav-text">Calendario</b></a><a href="#tracker" class="menu-link" data-view="tracker" aria-label="Tracker" title="Tracker"><span aria-hidden="true">☑</span><b class="nav-text">Tracker</b></a><a href="#estadisticas" class="menu-link" data-view="stats" aria-label="Estadísticas" title="Estadísticas"><span aria-hidden="true">▥</span><b class="nav-text">Estadísticas</b></a></nav><p class="sidebar-note">Un paso a la vez.</p></aside><div class="app-shell"><header><button id="mobileLogo" class="brand mobile-logo" aria-label="Abrir menú" aria-expanded="false" aria-controls="sidebar"><span>r.</span></button><span id="pageTitle" class="page-title">Historial</span><div class="header-actions"><span class="privacy">● Datos en este navegador</span><button id="themeToggle" class="secondary" aria-pressed="false">☾ Modo oscuro</button></div></header>
-<main><section class="intro"><div><p class="eyebrow">TU ESPACIO DE REFLEXIÓN</p><h1 id="viewHeading">Tu espacio para avanzar<span>.</span></h1><p id="viewDescription">Registra lo que pasó, reflexiona y sigue a tu ritmo.</p></div><button class="primary" id="newEntry">＋ Registrar recaída</button></section>
-<section id="habitsView" class="content habit-section" hidden><div class="heading"><div><h2>Mis hábitos</h2><p>Guarda lo que quieres cambiar y selecciónalo al registrar una recaída.</p></div></div><div class="separate-habit-sections"><section class="names-section"><h3>Guardar nombre</h3><p>Guarda un hábito para seleccionarlo después al registrar una recaída.</p><form id="habitForm" class="habit-form"><label for="habitName">Nombre del hábito</label><div><input id="habitName" required maxlength="80" placeholder="Ej.: dejar de beber Coca-Cola"><button class="primary" type="submit">Guardar nombre</button></div></form></section><section class="groups-section"><h3>Clases y subclases</h3><p>Organiza tus registros: Apps → Instagram, Facebook…</p><form id="classificationForm" class="habit-form unified-habits"><label for="savedCategory">Clase</label><input id="savedCategory" list="categoryOptions" required maxlength="80" placeholder="Ej.: Apps"><label for="savedSubcategory">Subclases</label><div class="subclass-add-row"><input id="savedSubcategory" maxlength="80" placeholder="Ej.: Instagram"><button id="addSubclass" class="secondary" type="button" aria-label="Añadir subclase">＋</button></div><div id="subclassChips" class="subclass-chips"></div><p class="form-note">Pulsa + para añadir cada subclase. Puedes añadir varias a la misma clase.</p><button class="primary" type="submit">Guardar clasificación</button></form></section></div><div class="saved-names"><button type="button" id="toggleSavedNames" class="secondary" aria-expanded="false" aria-controls="savedHabits">Ver nombres guardados ▾</button></div><div id="savedHabits" hidden class="habit-list" aria-label="Hábitos guardados"></div></section>
-<section id="historyView" class="content"><div class="heading"><div><h2>Tu historial</h2><p>Cada registro puede ayudarte a entender qué ocurrió.</p></div><button class="secondary" id="export">↓ Exportar datos</button></div><div class="filters"><label class="search"><span>Buscar</span><input id="search" type="search" placeholder="Hábito, descripción o comentario…"></label><label><span>Hábito</span><select id="habitFilter"><option value="">Todos los hábitos</option></select></label></div><div id="entries"></div><div class="history-footer"><div id="results" class="results" aria-live="polite"></div><nav class="pagination" aria-label="Páginas del historial"><button id="prevHistory" type="button" class="secondary" aria-label="Página anterior">‹</button><span id="historyPage" aria-live="polite"></span><button id="nextHistory" type="button" class="secondary" aria-label="Página siguiente">›</button></nav></div></section>
-<section id="calendarView" class="content" hidden><div class="heading"><div><h2>Calendario</h2><p>Cada recaída aparece en su fecha de inicio, con ambas fechas en el detalle.</p></div><div class="calendar-controls"><button id="prevMonth" class="secondary" aria-label="Mes anterior">‹</button><button id="currentMonth" class="secondary">Hoy</button><button id="nextMonth" class="secondary" aria-label="Mes siguiente">›</button></div></div><h3 id="calendarTitle" class="calendar-title"></h3><div class="calendar-scroll"><div class="weekdays"><span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span><span>Dom</span></div><div id="calendarGrid" class="calendar-grid"></div></div><div class="day-details"><h3 id="dayTitle"></h3><div id="dayEvents"></div></div></section><section id="statsView" class="content" hidden><div class="heading"><div><h2>Actividad por día</h2><p>Selecciona una barra para ver el detalle de ese día.</p></div></div><div class="stats-filters"><label>Medida<select id="statsMetric"><option value="time">Tiempo</option><option value="count">Recaídas</option></select></label><label>Clase<select id="statsCategory"><option value="">Todas las clases</option></select></label></div><div class="stats-hero"><strong id="statsTotal"></strong><span id="statsDay"></span></div><div class="chart-scroll"><div id="activityChart" class="activity-chart"></div></div><div class="week-controls"><button id="prevWeek" class="secondary" aria-label="Semana anterior">‹</button><span id="weekLabel"></span><button id="nextWeek" class="secondary" aria-label="Semana siguiente">›</button><select id="statsPeriod" aria-label="Período de la gráfica"><option value="week">Semana</option><option value="month">Mes</option><option value="year">Año</option></select><button id="thisWeek" class="secondary">Esta semana</button></div><p id="statsNote" class="stats-note"></p><div id="statsBreakdown" class="stats-breakdown"></div></section><section id="trackerView" class="content" hidden><div class="heading"><div><h2>Tracker de hábitos diarios</h2><p>Marca los días que cumples tu hábito. Cada casilla representa un día.</p></div></div><div class="tracker-toolbar"><button id="trackerPrev" class="secondary" aria-label="Mes anterior">‹</button><strong id="trackerMonth"></strong><button id="trackerNext" class="secondary" aria-label="Mes siguiente">›</button><button id="trackerToday" class="secondary">Este mes</button></div><form id="trackerForm" class="tracker-form"><label>Hábito<input id="trackerName" required maxlength="80" placeholder="Ej.: leer, caminar, no beber Coca-Cola"></label><label>Meta mensual (días)<input id="trackerGoal" type="number" min="1" max="31" value="20" required></label><button class="primary" type="submit">＋ Añadir hábito</button></form><p id="trackerMessage" class="stats-note" role="status"></p><div class="tracker-scroll tracker-unified"><table id="trackerTable"></table></div><p id="trackerEmpty" class="tracker-empty">Añade tu primer hábito para empezar a marcar tus días.</p><p class="stats-note">Las marcas se guardan por fecha. El progreso compara los días completados con tu meta mensual. Las rachas se calculan dentro del mes; los días futuros están deshabilitados.</p></section><p class="footnote">Tus datos se guardan solo en este navegador. Exporta una copia para conservarlos.</p></main></div>
-<dialog id="recordDetails" aria-labelledby="detailsTitle"><div class="dialog-heading"><h2 id="detailsTitle">Detalle del registro</h2><button id="closeDetails" type="button" class="icon" aria-label="Cerrar detalle">×</button></div><div id="detailsContent"></div><div class="dialog-actions"><button id="deleteDetails" type="button" class="secondary">Eliminar</button><button id="editDetails" type="button" class="primary">Editar registro</button></div></dialog><dialog id="entryDialog"><form id="entryForm"><div class="dialog-heading"><h2 id="dialogTitle">Registrar recaída</h2><button type="button" class="icon" id="close" aria-label="Cerrar">×</button></div><div class="entry-mode" role="group" aria-label="Tipo de registro"><button type="button" id="modeHabit" class="secondary" aria-pressed="true">Registrar hábito</button><button type="button" id="modeClass" class="secondary" aria-pressed="false">Registrar clase</button></div><div id="entryClassification" class="form-grid classification" hidden><label>Clase<input id="category" list="categoryOptions" maxlength="80" placeholder="Ej.: Apps"></label><label>Subclase (opcional)<select id="subcategory" disabled><option value="">Selecciona primero una clase</option></select></label></div><datalist id="categoryOptions"></datalist><datalist id="subcategoryOptions"></datalist><div id="entryHabitPicker" class="habit-picker"><label for="habit">Hábito</label><div class="habit-input-row"><input id="habit" required maxlength="80" placeholder="Escribe cualquier hábito" autocomplete="off"><button type="button" id="saveTypedHabit" class="secondary" disabled title="Guardar este nombre en tu lista">Guardar</button><button type="button" id="toggleHabitList" class="secondary" aria-expanded="false" aria-controls="habitDropdown" title="Ver hábitos guardados" aria-label="Ver hábitos guardados">▾</button></div><div id="habitDropdown" class="habit-dropdown" hidden><p class="habit-empty">Todavía no tienes hábitos guardados.</p></div></div><div class="form-grid"><label>Fecha de inicio<input id="occurredAt" type="datetime-local" required></label><label>¿Cuántas veces?<input id="count" type="number" min="1" max="9999" step="1" value="1" required></label></div><label>Fecha final (opcional)<input id="endedAt" type="datetime-local"></label><label>Descripción<textarea id="description" rows="3" maxlength="2000" placeholder="Describe qué pasó y en qué situación estabas."></textarea></label><label>Comentario o reflexión<textarea id="comment" rows="3" maxlength="2000" placeholder="¿Qué notaste? ¿Qué te gustaría probar la próxima vez?"></textarea></label><p class="form-note">Puedes registrar una ocasión o agrupar varias de la misma fecha.</p><div class="dialog-actions"><button type="button" class="secondary" id="cancel">Cancelar</button><button type="submit" class="primary">Guardar registro</button></div></form></dialog>
-<div class="toast" id="toast" role="status"></div><script type="module" src="frontend/src/app.js"></script></body></html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta
+      name="description"
+      content="Registra recaídas, describe lo que pasó y reflexiona sobre tus hábitos."
+    />
+    <title>Ritmo · Registro de hábitos</title>
+    <link rel="stylesheet" href="frontend/src/styles/styles.css" />
+  </head>
+  <body>
+    <button
+      id="menuBackdrop"
+      class="menu-backdrop"
+      aria-label="Cerrar menú"
+      hidden
+    ></button>
+    <aside id="sidebar" class="sidebar">
+      <a href="./" class="brand"
+        ><span>r.</span><b class="brand-name">ritmo</b></a
+      ><button
+        id="sidebarToggle"
+        class="secondary sidebar-toggle"
+        aria-label="Contraer menú"
+        aria-expanded="true"
+      >
+        «
+      </button>
+      <p class="menu-label">MI ESPACIO</p>
+      <nav aria-label="Menú principal">
+        <a
+          href="#historial"
+          class="menu-link"
+          data-view="history"
+          aria-label="Historial"
+          title="Historial"
+          ><span aria-hidden="true">▤</span><b class="nav-text">Historial</b></a
+        ><a
+          href="#habitos"
+          class="menu-link"
+          data-view="habits"
+          aria-label="Añadir hábito"
+          title="Añadir hábito"
+          ><span aria-hidden="true">＋</span
+          ><b class="nav-text">Añadir hábito</b></a
+        ><a
+          href="#calendario"
+          class="menu-link"
+          data-view="calendar"
+          aria-label="Calendario"
+          title="Calendario"
+          ><span aria-hidden="true">▦</span
+          ><b class="nav-text">Calendario</b></a
+        ><a
+          href="#tracker"
+          class="menu-link"
+          data-view="tracker"
+          aria-label="Tracker"
+          title="Tracker"
+          ><span aria-hidden="true">☑</span><b class="nav-text">Tracker</b></a
+        ><a
+          href="#estadisticas"
+          class="menu-link"
+          data-view="stats"
+          aria-label="Estadísticas"
+          title="Estadísticas"
+          ><span aria-hidden="true">▥</span
+          ><b class="nav-text">Estadísticas</b></a
+        >
+      </nav>
+      <p class="sidebar-note">Un paso a la vez.</p>
+    </aside>
+    <div class="app-shell">
+      <header>
+        <button
+          id="mobileLogo"
+          class="brand mobile-logo"
+          aria-label="Abrir menú"
+          aria-expanded="false"
+          aria-controls="sidebar"
+        >
+          <span>r.</span></button
+        ><span id="pageTitle" class="page-title">Historial</span>
+        <div class="header-actions">
+          <span class="privacy">● Datos en este navegador</span
+          ><button id="themeToggle" class="secondary" aria-pressed="false">
+            ☾ Modo oscuro
+          </button>
+        </div>
+      </header>
+      <main>
+        <section class="intro">
+          <div>
+            <p class="eyebrow">TU ESPACIO DE REFLEXIÓN</p>
+            <h1 id="viewHeading">Tu espacio para avanzar<span>.</span></h1>
+            <p id="viewDescription">
+              Registra lo que pasó, reflexiona y sigue a tu ritmo.
+            </p>
+          </div>
+          <button class="primary" id="newEntry">＋ Registrar recaída</button>
+        </section>
+        <section id="habitsView" class="content habit-section" hidden>
+          <div class="heading">
+            <div>
+              <h2>Mis hábitos</h2>
+              <p>
+                Guarda lo que quieres cambiar y selecciónalo al registrar una
+                recaída.
+              </p>
+            </div>
+          </div>
+          <div class="separate-habit-sections">
+            <section class="names-section">
+              <h3>Guardar nombre</h3>
+              <p>
+                Guarda un hábito para seleccionarlo después al registrar una
+                recaída.
+              </p>
+              <form id="habitForm" class="habit-form">
+                <label for="habitName">Nombre del hábito</label>
+                <div>
+                  <input
+                    id="habitName"
+                    required
+                    maxlength="80"
+                    placeholder="Ej.: dejar de beber Coca-Cola"
+                  /><button class="primary" type="submit">
+                    Guardar nombre
+                  </button>
+                </div>
+              </form>
+            </section>
+            <section class="groups-section">
+              <h3>Clases y subclases</h3>
+              <p>Organiza tus registros: Apps → Instagram, Facebook…</p>
+              <form id="classificationForm" class="habit-form unified-habits">
+                <label for="savedCategory">Clase</label
+                ><input
+                  id="savedCategory"
+                  list="categoryOptions"
+                  required
+                  maxlength="80"
+                  placeholder="Ej.: Apps"
+                /><label for="savedSubcategory">Subclases</label>
+                <div class="subclass-add-row">
+                  <input
+                    id="savedSubcategory"
+                    maxlength="80"
+                    placeholder="Ej.: Instagram"
+                  /><button
+                    id="addSubclass"
+                    class="secondary"
+                    type="button"
+                    aria-label="Añadir subclase"
+                  >
+                    ＋
+                  </button>
+                </div>
+                <div id="subclassChips" class="subclass-chips"></div>
+                <p class="form-note">
+                  Pulsa + para añadir cada subclase. Puedes añadir varias a la
+                  misma clase.
+                </p>
+                <button class="primary" type="submit">
+                  Guardar clasificación
+                </button>
+              </form>
+            </section>
+          </div>
+          <div class="saved-names">
+            <button
+              type="button"
+              id="toggleSavedNames"
+              class="secondary"
+              aria-expanded="false"
+              aria-controls="savedHabits"
+            >
+              Ver nombres guardados ▾
+            </button>
+          </div>
+          <div
+            id="savedHabits"
+            hidden
+            class="habit-list"
+            aria-label="Hábitos guardados"
+          ></div>
+        </section>
+        <section id="historyView" class="content">
+          <div class="heading">
+            <div>
+              <h2>Tu historial</h2>
+              <p>Cada registro puede ayudarte a entender qué ocurrió.</p>
+            </div>
+            <button class="secondary" id="export">↓ Exportar datos</button>
+          </div>
+          <div class="filters">
+            <label class="search"
+              ><span>Buscar</span
+              ><input
+                id="search"
+                type="search"
+                placeholder="Hábito, descripción o comentario…" /></label
+            ><label
+              ><span>Hábito</span
+              ><select id="habitFilter">
+                <option value="">Todos los hábitos</option>
+              </select></label
+            >
+          </div>
+          <div id="entries"></div>
+          <div class="history-footer">
+            <div id="results" class="results" aria-live="polite"></div>
+            <nav class="pagination" aria-label="Páginas del historial">
+              <button
+                id="prevHistory"
+                type="button"
+                class="secondary"
+                aria-label="Página anterior"
+              >
+                ‹</button
+              ><span id="historyPage" aria-live="polite"></span
+              ><button
+                id="nextHistory"
+                type="button"
+                class="secondary"
+                aria-label="Página siguiente"
+              >
+                ›
+              </button>
+            </nav>
+          </div>
+        </section>
+        <section id="calendarView" class="content" hidden>
+          <div class="heading">
+            <div>
+              <h2>Calendario</h2>
+              <p>
+                Cada recaída aparece en su fecha de inicio, con ambas fechas en
+                el detalle.
+              </p>
+            </div>
+            <div class="calendar-controls">
+              <button
+                id="prevMonth"
+                class="secondary"
+                aria-label="Mes anterior"
+              >
+                ‹</button
+              ><button id="currentMonth" class="secondary">Hoy</button
+              ><button
+                id="nextMonth"
+                class="secondary"
+                aria-label="Mes siguiente"
+              >
+                ›
+              </button>
+            </div>
+          </div>
+          <h3 id="calendarTitle" class="calendar-title"></h3>
+          <div class="calendar-scroll">
+            <div class="weekdays">
+              <span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span
+              ><span>Vie</span><span>Sáb</span><span>Dom</span>
+            </div>
+            <div id="calendarGrid" class="calendar-grid"></div>
+          </div>
+          <div class="day-details">
+            <h3 id="dayTitle"></h3>
+            <div id="dayEvents"></div>
+          </div>
+        </section>
+        <section id="statsView" class="content" hidden>
+          <div class="heading">
+            <div>
+              <h2>Actividad por día</h2>
+              <p>Selecciona una barra para ver el detalle de ese día.</p>
+            </div>
+          </div>
+          <div class="stats-filters">
+            <label
+              >Medida<select id="statsMetric">
+                <option value="time">Tiempo</option>
+                <option value="count">Recaídas</option>
+              </select></label
+            ><label
+              >Clase<select id="statsCategory">
+                <option value="">Todas las clases</option>
+              </select></label
+            >
+          </div>
+          <div class="stats-hero">
+            <strong id="statsTotal"></strong><span id="statsDay"></span>
+          </div>
+          <div class="chart-scroll">
+            <div id="activityChart" class="activity-chart"></div>
+          </div>
+          <div class="week-controls">
+            <button
+              id="prevWeek"
+              class="secondary"
+              aria-label="Semana anterior"
+            >
+              ‹</button
+            ><span id="weekLabel"></span
+            ><button
+              id="nextWeek"
+              class="secondary"
+              aria-label="Semana siguiente"
+            >
+              ›</button
+            ><select id="statsPeriod" aria-label="Período de la gráfica">
+              <option value="week">Semana</option>
+              <option value="month">Mes</option>
+              <option value="year">Año</option></select
+            ><button id="thisWeek" class="secondary">Esta semana</button>
+          </div>
+          <p id="statsNote" class="stats-note"></p>
+          <div id="statsBreakdown" class="stats-breakdown"></div>
+        </section>
+        <section id="trackerView" class="content" hidden>
+          <div class="heading">
+            <div>
+              <h2>Tracker de hábitos diarios</h2>
+              <p>
+                Marca los días que cumples tu hábito. Cada casilla representa un
+                día.
+              </p>
+            </div>
+          </div>
+          <div class="tracker-toolbar">
+            <button
+              id="trackerPrev"
+              class="secondary"
+              aria-label="Mes anterior"
+            >
+              ‹</button
+            ><strong id="trackerMonth"></strong
+            ><button
+              id="trackerNext"
+              class="secondary"
+              aria-label="Mes siguiente"
+            >
+              ›</button
+            ><button id="trackerToday" class="secondary">Este mes</button>
+          </div>
+          <form id="trackerForm" class="tracker-form">
+            <label
+              >Hábito<input
+                id="trackerName"
+                required
+                maxlength="80"
+                placeholder="Ej.: leer, caminar, no beber Coca-Cola" /></label
+            ><label
+              >Meta mensual (días)<input
+                id="trackerGoal"
+                type="number"
+                min="1"
+                max="31"
+                value="20"
+                required /></label
+            ><button class="primary" type="submit">＋ Añadir hábito</button>
+          </form>
+          <p id="trackerMessage" class="stats-note" role="status"></p>
+          <div class="tracker-scroll tracker-unified">
+            <table id="trackerTable"></table>
+          </div>
+          <p id="trackerEmpty" class="tracker-empty">
+            Añade tu primer hábito para empezar a marcar tus días.
+          </p>
+          <p class="stats-note">
+            Las marcas se guardan por fecha. El progreso compara los días
+            completados con tu meta mensual. Las rachas se calculan dentro del
+            mes; los días futuros están deshabilitados.
+          </p>
+        </section>
+        <p class="footnote">
+          Tus datos se guardan solo en este navegador. Exporta una copia para
+          conservarlos.
+        </p>
+      </main>
+    </div>
+    <dialog id="recordDetails" aria-labelledby="detailsTitle">
+      <div class="dialog-heading">
+        <h2 id="detailsTitle">Detalle del registro</h2>
+        <button
+          id="closeDetails"
+          type="button"
+          class="icon"
+          aria-label="Cerrar detalle"
+        >
+          ×
+        </button>
+      </div>
+      <div id="detailsContent"></div>
+      <div class="dialog-actions">
+        <button id="deleteDetails" type="button" class="secondary">
+          Eliminar</button
+        ><button id="editDetails" type="button" class="primary">
+          Editar registro
+        </button>
+      </div>
+    </dialog>
+    <dialog id="entryDialog">
+      <form id="entryForm">
+        <div class="dialog-heading">
+          <h2 id="dialogTitle">Registrar recaída</h2>
+          <button type="button" class="icon" id="close" aria-label="Cerrar">
+            ×
+          </button>
+        </div>
+        <div class="entry-mode" role="group" aria-label="Tipo de registro">
+          <button
+            type="button"
+            id="modeHabit"
+            class="secondary"
+            aria-pressed="true"
+          >
+            Registrar hábito</button
+          ><button
+            type="button"
+            id="modeClass"
+            class="secondary"
+            aria-pressed="false"
+          >
+            Registrar clase
+          </button>
+        </div>
+        <div id="entryClassification" class="form-grid classification" hidden>
+          <label
+            >Clase<input
+              id="category"
+              list="categoryOptions"
+              maxlength="80"
+              placeholder="Ej.: Apps" /></label
+          ><label
+            >Subclase (opcional)<select id="subcategory" disabled>
+              <option value="">Selecciona primero una clase</option>
+            </select></label
+          >
+        </div>
+        <datalist id="categoryOptions"></datalist
+        ><datalist id="subcategoryOptions"></datalist>
+        <div id="entryHabitPicker" class="habit-picker">
+          <label for="habit">Hábito</label>
+          <div class="habit-input-row">
+            <input
+              id="habit"
+              required
+              maxlength="80"
+              placeholder="Escribe cualquier hábito"
+              autocomplete="off"
+            /><button
+              type="button"
+              id="saveTypedHabit"
+              class="secondary"
+              disabled
+              title="Guardar este nombre en tu lista"
+            >
+              Guardar</button
+            ><button
+              type="button"
+              id="toggleHabitList"
+              class="secondary"
+              aria-expanded="false"
+              aria-controls="habitDropdown"
+              title="Ver hábitos guardados"
+              aria-label="Ver hábitos guardados"
+            >
+              ▾
+            </button>
+          </div>
+          <div id="habitDropdown" class="habit-dropdown" hidden>
+            <p class="habit-empty">Todavía no tienes hábitos guardados.</p>
+          </div>
+        </div>
+        <div class="form-grid entry-dates">
+          <label
+            >Fecha de inicio<input
+              id="occurredAt"
+              type="datetime-local"
+              required /></label
+          ><label
+            >Fecha final (opcional)<input id="endedAt" type="datetime-local"
+          /></label>
+        </div>
+        <label
+          >Descripción<textarea
+            id="description"
+            rows="3"
+            maxlength="2000"
+            placeholder="Describe qué pasó y en qué situación estabas."
+          ></textarea></label
+        ><label
+          >Comentario o reflexión<textarea
+            id="comment"
+            rows="3"
+            maxlength="2000"
+            placeholder="¿Qué notaste? ¿Qué te gustaría probar la próxima vez?"
+          ></textarea>
+        </label>
+        <p class="form-note">
+          Cada registro corresponde a una recaída. La fecha final es opcional.
+        </p>
+        <div class="dialog-actions">
+          <button type="button" class="secondary" id="cancel">Cancelar</button
+          ><button type="submit" class="primary">Guardar registro</button>
+        </div>
+      </form>
+    </dialog>
+    <div class="toast" id="toast" role="status"></div>
+    <script type="module" src="frontend/src/app.js"></script>
+  </body>
+</html>

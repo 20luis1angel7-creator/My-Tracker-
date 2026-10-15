@@ -1,1 +1,1 @@
-export * from '../../../shared/domain/calendar.js';
+export * from "../../../shared/domain/calendar.js";

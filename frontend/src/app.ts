@@ -1,75 +1,1145 @@
-import type {StatisticsPeriod} from './lib/statistics.js';
-type View='history'|'habits'|'calendar'|'stats'|'tracker';
-import type {Entry, HabitGroup, ClassDefinition, StorageWrite, CalendarEvent} from '../../shared/types.js';
-import {durationMinutes,formatDuration,weekStart,weekData,periodData,breakdown} from './lib/statistics.js';
-import {dateKey,eventsForDay} from './lib/calendar.js';
-import {STORAGE_KEY,habitKey,validateEntry,filterEntries,loadEntries} from './lib/model.js';
-type UIElement = HTMLElement & Pick<HTMLInputElement,'value'|'required'|'disabled'|'min'> & Pick<HTMLDialogElement,'showModal'|'close'|'open'> & Pick<HTMLFormElement,'reset'>;
-const $=(id:string):UIElement=>{const element=document.getElementById(id);if(!element)throw new Error(`Missing element: ${id}`);return element as UIElement};let entryMode:'habit'|'class'='habit';let entries:Entry[]=[],savedHabits:string[]=[],editing:string|null=null,storageError=false,timer:ReturnType<typeof setTimeout>;
-let detailId:string|null=null;let historyPage=1;const HISTORY_PAGE_SIZE=10;let draftSubclasses:string[]=[];let classCatalog:Record<string,ClassDefinition>={};const CATALOG_KEY='ritmo-classes-v1';let habitGroups:Record<string,HabitGroup>={};const GROUPS_KEY='ritmo-habit-groups-v1';let statsWeek=weekStart(new Date()),statsSelected=dateKey(new Date());
-let calendarMonth=new Date(),selectedDay=dateKey(new Date());
-const HABITS_KEY="ritmo-habits-v1",THEME_KEY="ritmo-theme-v1";
-function toast(message:string){const element=$('toast');element.textContent=message;element.classList.add('visible');clearTimeout(timer);timer=setTimeout(()=>element.classList.remove('visible'),4500)}
-try{entries=loadEntries(localStorage)}catch{storageError=true;toast('No se pudieron leer los datos guardados. No se sobrescribirán.');}
-try{const raw=localStorage.getItem(HABITS_KEY);savedHabits=raw?JSON.parse(raw):[];if(!Array.isArray(savedHabits)||savedHabits.some(h=>typeof h!=='string'||!h.trim()))throw Error('Hábitos inválidos');savedHabits=[...new Map(savedHabits.map(h=>[habitKey(h),h.trim()])).values()];if(!storageError)localStorage.setItem(HABITS_KEY,JSON.stringify(savedHabits))}catch{storageError=true;toast('No se pudieron leer o guardar los hábitos. Tus datos no se sobrescribirán.')}
-try{habitGroups=JSON.parse(localStorage.getItem(GROUPS_KEY)||'{}');if(!habitGroups||Array.isArray(habitGroups)||typeof habitGroups!=='object'||Object.values(habitGroups).some(g=>!g||typeof g.category!=='string'||typeof g.subcategory!=='string'))throw Error('Clases inválidas')}catch{storageError=true;toast('No se pudieron leer las clases guardadas. No se sobrescribirán.')}
-try{classCatalog=JSON.parse(localStorage.getItem(CATALOG_KEY)||'{}');if(!classCatalog||Array.isArray(classCatalog)||typeof classCatalog!=='object'||Object.values(classCatalog).some(c=>!c||typeof c.name!=='string'||!Array.isArray(c.subclasses)||c.subclasses.some(s=>typeof s!=='string')))throw Error('Clases inválidas');for(const g of [...Object.values(habitGroups),...entries])if(g.category){const key=habitKey(g.category);const c=classCatalog[key]||{name:g.category,subclasses:[]};if(g.subcategory&&!c.subclasses.some(s=>habitKey(s)===habitKey(g.subcategory!)))c.subclasses.push(g.subcategory!);classCatalog[key]=c}}catch{classCatalog={};storageError=true;toast('No se pudieron leer las clases. Tus datos no se sobrescribirán.')}
-let dark=window.matchMedia('(prefers-color-scheme: dark)').matches;try{const theme=localStorage.getItem(THEME_KEY);if(theme)dark=theme==='dark'}catch{}
-function applyTheme(){document.documentElement.dataset.theme=dark?'dark':'light';$('themeToggle').textContent=dark?'☀ Modo claro':'☾ Modo oscuro';$('themeToggle').setAttribute('aria-pressed',String(dark))}
-applyTheme();$('themeToggle').onclick=()=>{dark=!dark;applyTheme();try{localStorage.setItem(THEME_KEY,dark?'dark':'light')}catch{toast('El tema cambiará solo durante esta sesión.')}};
-const esc=(value:unknown)=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]||c));
-function commit(next:Entry[]){if(storageError){toast('No se pueden guardar registros hasta recuperar los datos del navegador.');return false}try{localStorage.setItem(STORAGE_KEY,JSON.stringify(next));entries=next;render();return true}catch{toast('No se pudo guardar. Comprueba que el navegador permite almacenamiento local.');return false}}
-function recordCard(e:Entry|CalendarEvent,editable=false){const name='habit' in e?e.habit:e.name;const format=(value:string)=>new Intl.DateTimeFormat('es',{dateStyle:'medium',timeStyle:'short'}).format(new Date(value));return `<article class="entry record-card" data-id="${esc(e.id)}"><div class="record-header"><h3>${editable?`<button type="button" class="record-name" data-action="details" aria-label="Ver detalle de ${esc(name)}">${esc(name)}</button>`:esc(name)}${(e.category||e.subcategory)?`<small class="record-class">${esc([e.category,e.subcategory].filter(Boolean).join(' / '))}</small>`:''}</h3><span class="badge">${e.count} ${e.count===1?'vez':'veces'}</span></div><div class="record-meta"><div><span>Inicio</span><time datetime="${esc(e.occurredAt)}">${format(e.occurredAt)}</time></div><div><span>Final</span>${e.endedAt?`<time datetime="${esc(e.endedAt)}">${format(e.endedAt)}</time>`:'<span class="record-value">Sin fecha final</span>'}</div></div>${!editable&&(e.description||e.comment)?`<div class="record-notes">${e.description?`<div><h4>Descripción</h4><p>${esc(e.description)}</p></div>`:''}${e.comment?`<div><h4>Comentario / reflexión</h4><p>${esc(e.comment)}</p></div>`:''}</div>`:''}</article>`}
-function render(){const selected=$('habitFilter').value;const habitSelected=$('habit').value;const habits=[...new Map([...savedHabits,...entries.map(e=>e.habit)].map(name=>[habitKey(name),name])).entries()].sort((a,b)=>a[1].localeCompare(b[1],'es'));$('habitFilter').innerHTML='<option value="">Todos los hábitos</option>'+habits.map(([key,name])=>`<option value="${esc(key)}">${esc(name)}</option>`).join('');$('habitFilter').value=habits.some(([key])=>key===selected)?selected:'';$('habit').value=habitSelected;renderHabitDropdown();$('savedHabits').innerHTML=savedHabits.length?savedHabits.map(name=>`<div class="habit-card"><button type="button" class="habit-chip" data-habit="${esc(name)}" title="Registrar una recaída de este hábito">${esc(name)}${habitGroups[habitKey(name)]?.category?`<small class="record-class">${esc([habitGroups[habitKey(name)].category,habitGroups[habitKey(name)].subcategory].filter(Boolean).join(' / '))}</small>`:''} <span>＋</span></button></div>`).join(''):'<p class="habit-empty">Todavía no tienes hábitos guardados. Añade el primero arriba.</p>';const filtered=filterEntries(entries,$('search').value,$('habitFilter').value);const totalPages=Math.max(1,Math.ceil(filtered.length/HISTORY_PAGE_SIZE));historyPage=Math.min(historyPage,totalPages);const start=(historyPage-1)*HISTORY_PAGE_SIZE;const visible=filtered.slice(start,start+HISTORY_PAGE_SIZE);$('entries').innerHTML=visible.length?visible.map(e=>recordCard(e,true)).join(''):`<div class="empty"><span>↗</span><h3>${entries.length?'No hay coincidencias':'Empieza con un registro'}</h3><p>${entries.length?'Prueba otra búsqueda o cambia el filtro.':'Añade el hábito, cuántas veces ocurrió y lo que quieras recordar.'}</p>${entries.length?'':'<button class="primary" id="firstEntry">Registrar mi primera recaída</button>'}</div>`;document.getElementById('firstEntry')?.addEventListener('click',()=>openForm());$('results').textContent=filtered.length?`${start+1}–${start+visible.length} de ${filtered.length} registros`:'0 registros';$('historyPage').textContent=`${historyPage} / ${totalPages}`;$('prevHistory').disabled=historyPage===1;$('nextHistory').disabled=historyPage===totalPages;renderCalendar();renderStatistics();renderClassOptions();renderClassManager()}
-function localDateValue(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}T${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`}
-function openForm(entry?:Entry|null,habit?:string){editing=entry?.id??null;$('entryForm').reset();$('dialogTitle').textContent=entry?'Editar registro':'Registrar recaída';$('occurredAt').value=localDateValue();if(entry)for(const key of (['habit','category','subcategory','occurredAt','endedAt','count','description','comment'] as const))$(key).value=key==='habit'?(savedHabits.find(h=>habitKey(h)===habitKey(entry.habit))||entry.habit):String(entry[key]??'');$('endedAt').min=$('occurredAt').value;if(habit){$('habit').value=habit;fillHabitGroup(habit)}setHabitList(false);updateSaveHabit();$('entryDialog').showModal();setEntryMode(entry?.type==='class'||(!entry?.type&&entry?.category)?'class':'habit');renderClassOptions(entry?.subcategory);$(entryMode==='class'?'category':'habit').focus()}
-$('newEntry').onclick=()=>openForm();for(const id of ['close','cancel'])$(id).onclick=()=>$('entryDialog').close();$('entryForm').onsubmit=event=>{event.preventDefault();const entry:Entry={id:editing||crypto.randomUUID(),type:entryMode,habit:entryMode==='class'?($('subcategory').value.trim()||$('category').value.trim()):$('habit').value.trim(),category:entryMode==='class'?$('category').value.trim():'',subcategory:entryMode==='class'?$('subcategory').value.trim():'',occurredAt:$('occurredAt').value,endedAt:$('endedAt').value,count:Number($('count').value),description:$('description').value.trim(),comment:$('comment').value.trim()};const error=validateEntry(entry);if(error)return toast(error);const next=editing?entries.map(e=>e.id===editing?entry:e):[entry,...entries];if(!editing)historyPage=1;if(commit(next)){$('entryDialog').close();toast(editing?'Registro actualizado':'Registro guardado')}};
-$('search').oninput=()=>{historyPage=1;render()};$('habitFilter').onchange=()=>{historyPage=1;render()};$('prevHistory').onclick=()=>{if(historyPage>1){historyPage--;render()}};$('nextHistory').onclick=()=>{if(historyPage<Math.ceil(filterEntries(entries,$('search').value,$('habitFilter').value).length/HISTORY_PAGE_SIZE)){historyPage++;render()}};$('entries').onclick=event=>{const button=(event.target as Element).closest<HTMLElement>('[data-action]');if(!button)return;const entry=entries.find(e=>e.id===button.closest<HTMLElement>('[data-id]')?.dataset.id);if(!entry)return;if(button.dataset.action==='details')showDetails(entry)};
-$('export').onclick=()=>{const blob=new Blob([JSON.stringify({application:'Ritmo',version:4,exportedAt:new Date().toISOString(),habits:savedHabits,habitGroups,classCatalog,entries},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download=`ritmo-registros-${localDateValue().slice(0,10)}.json`;link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);toast('Copia de los registros exportada')};render();
+import type { StatisticsPeriod } from "./lib/statistics.js";
+type View = "history" | "habits" | "calendar" | "stats" | "tracker";
+import type {
+  Entry,
+  HabitGroup,
+  ClassDefinition,
+  StorageWrite,
+  CalendarEvent,
+} from "../../shared/types.js";
+import {
+  durationMinutes,
+  formatDuration,
+  weekStart,
+  weekData,
+  periodData,
+  breakdown,
+} from "./lib/statistics.js";
+import { dateKey, eventsForDay } from "./lib/calendar.js";
+import {
+  STORAGE_KEY,
+  habitKey,
+  validateEntry,
+  filterEntries,
+  loadEntries,
+} from "./lib/model.js";
+type UIElement = HTMLElement &
+  Pick<HTMLInputElement, "value" | "required" | "disabled" | "min"> &
+  Pick<HTMLDialogElement, "showModal" | "close" | "open"> &
+  Pick<HTMLFormElement, "reset">;
+const $ = (id: string): UIElement => {
+  const element = document.getElementById(id);
+  if (!element) throw new Error(`Missing element: ${id}`);
+  return element as UIElement;
+};
+let entryMode: "habit" | "class" = "habit";
+let entries: Entry[] = [],
+  savedHabits: string[] = [],
+  editing: string | null = null,
+  storageError = false,
+  timer: ReturnType<typeof setTimeout>;
+let detailId: string | null = null;
+let historyPage = 1;
+const HISTORY_PAGE_SIZE = 10;
+let draftSubclasses: string[] = [];
+let classCatalog: Record<string, ClassDefinition> = {};
+const CATALOG_KEY = "ritmo-classes-v1";
+let habitGroups: Record<string, HabitGroup> = {};
+const GROUPS_KEY = "ritmo-habit-groups-v1";
+let statsWeek = weekStart(new Date()),
+  statsSelected = dateKey(new Date());
+let calendarMonth = new Date(),
+  selectedDay = dateKey(new Date());
+const HABITS_KEY = "ritmo-habits-v1",
+  THEME_KEY = "ritmo-theme-v1";
+function toast(message: string) {
+  const element = $("toast");
+  element.textContent = message;
+  element.classList.add("visible");
+  clearTimeout(timer);
+  timer = setTimeout(() => element.classList.remove("visible"), 4500);
+}
+try {
+  entries = loadEntries(localStorage);
+} catch {
+  storageError = true;
+  toast("No se pudieron leer los datos guardados. No se sobrescribirán.");
+}
+try {
+  const raw = localStorage.getItem(HABITS_KEY);
+  savedHabits = raw ? JSON.parse(raw) : [];
+  if (
+    !Array.isArray(savedHabits) ||
+    savedHabits.some((h) => typeof h !== "string" || !h.trim())
+  )
+    throw Error("Hábitos inválidos");
+  savedHabits = [
+    ...new Map(savedHabits.map((h) => [habitKey(h), h.trim()])).values(),
+  ];
+  if (!storageError)
+    localStorage.setItem(HABITS_KEY, JSON.stringify(savedHabits));
+} catch {
+  storageError = true;
+  toast(
+    "No se pudieron leer o guardar los hábitos. Tus datos no se sobrescribirán.",
+  );
+}
+try {
+  habitGroups = JSON.parse(localStorage.getItem(GROUPS_KEY) || "{}");
+  if (
+    !habitGroups ||
+    Array.isArray(habitGroups) ||
+    typeof habitGroups !== "object" ||
+    Object.values(habitGroups).some(
+      (g) =>
+        !g ||
+        typeof g.category !== "string" ||
+        typeof g.subcategory !== "string",
+    )
+  )
+    throw Error("Clases inválidas");
+} catch {
+  storageError = true;
+  toast("No se pudieron leer las clases guardadas. No se sobrescribirán.");
+}
+try {
+  classCatalog = JSON.parse(localStorage.getItem(CATALOG_KEY) || "{}");
+  if (
+    !classCatalog ||
+    Array.isArray(classCatalog) ||
+    typeof classCatalog !== "object" ||
+    Object.values(classCatalog).some(
+      (c) =>
+        !c ||
+        typeof c.name !== "string" ||
+        !Array.isArray(c.subclasses) ||
+        c.subclasses.some((s) => typeof s !== "string"),
+    )
+  )
+    throw Error("Clases inválidas");
+  for (const g of [...Object.values(habitGroups), ...entries])
+    if (g.category) {
+      const key = habitKey(g.category);
+      const c = classCatalog[key] || { name: g.category, subclasses: [] };
+      if (
+        g.subcategory &&
+        !c.subclasses.some((s) => habitKey(s) === habitKey(g.subcategory!))
+      )
+        c.subclasses.push(g.subcategory!);
+      classCatalog[key] = c;
+    }
+} catch {
+  classCatalog = {};
+  storageError = true;
+  toast("No se pudieron leer las clases. Tus datos no se sobrescribirán.");
+}
+let dark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+try {
+  const theme = localStorage.getItem(THEME_KEY);
+  if (theme) dark = theme === "dark";
+} catch {}
+function applyTheme() {
+  document.documentElement.dataset.theme = dark ? "dark" : "light";
+  $("themeToggle").textContent = dark ? "☀ Modo claro" : "☾ Modo oscuro";
+  $("themeToggle").setAttribute("aria-pressed", String(dark));
+}
+applyTheme();
+$("themeToggle").onclick = () => {
+  dark = !dark;
+  applyTheme();
+  try {
+    localStorage.setItem(THEME_KEY, dark ? "dark" : "light");
+  } catch {
+    toast("El tema cambiará solo durante esta sesión.");
+  }
+};
+const esc = (value: unknown) =>
+  String(value).replace(
+    /[&<>"']/g,
+    (c) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[
+        c
+      ] || c,
+  );
+function commit(next: Entry[]) {
+  if (storageError) {
+    toast(
+      "No se pueden guardar registros hasta recuperar los datos del navegador.",
+    );
+    return false;
+  }
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+    entries = next;
+    render();
+    return true;
+  } catch {
+    toast(
+      "No se pudo guardar. Comprueba que el navegador permite almacenamiento local.",
+    );
+    return false;
+  }
+}
+function recordCard(e: Entry | CalendarEvent, editable = false) {
+  const name = "habit" in e ? e.habit : e.name;
+  const format = (value: string) =>
+    new Intl.DateTimeFormat("es", {
+      dateStyle: "medium",
+      timeStyle: "short",
+    }).format(new Date(value));
+  return /* HTML */ `<article class="entry record-card" data-id="${esc(e.id)}">
+    <div class="record-header">
+      <h3>
+        ${editable ? /* HTML */ `<button type="button" class="record-name" data-action="details" aria-label="Ver detalle de ${esc(name)}">${esc(name)}</button>` : esc(name)}${e.category || e.subcategory ? /* HTML */ `<small class="record-class">${esc([e.category, e.subcategory].filter(Boolean).join(" / "))}</small>` : ""}
+      </h3>
+      <span class="badge">${e.count} ${e.count === 1 ? "vez" : "veces"}</span>
+    </div>
+    <div class="record-meta">
+      <div>
+        <span>Inicio</span
+        ><time datetime="${esc(e.occurredAt)}">${format(e.occurredAt)}</time>
+      </div>
+      <div>
+        <span>Final</span
+        >${e.endedAt ? /* HTML */ `<time datetime="${esc(e.endedAt)}">${format(e.endedAt)}</time>` : '<span class="record-value">Sin fecha final</span>'}
+      </div>
+    </div>
+    ${
+      !editable && (e.description || e.comment)
+        ? /* HTML */ `<div class="record-notes">
+            ${
+              e.description
+                ? /* HTML */ `<div>
+                    <h4>Descripción</h4>
+                    <p>${esc(e.description)}</p>
+                  </div>`
+                : ""
+            }${
+              e.comment
+                ? /* HTML */ `<div>
+                    <h4>Comentario / reflexión</h4>
+                    <p>${esc(e.comment)}</p>
+                  </div>`
+                : ""
+            }
+          </div>`
+        : ""
+    }
+  </article>`;
+}
+function render() {
+  const selected = $("habitFilter").value;
+  const habitSelected = $("habit").value;
+  const habits = [
+    ...new Map(
+      [...savedHabits, ...entries.map((e) => e.habit)].map((name) => [
+        habitKey(name),
+        name,
+      ]),
+    ).entries(),
+  ].sort((a, b) => a[1].localeCompare(b[1], "es"));
+  $("habitFilter").innerHTML =
+    '<option value="">Todos los hábitos</option>' +
+    habits
+      .map(
+        ([key, name]) =>
+          /* HTML */ `<option value="${esc(key)}">${esc(name)}</option>`,
+      )
+      .join("");
+  $("habitFilter").value = habits.some(([key]) => key === selected)
+    ? selected
+    : "";
+  $("habit").value = habitSelected;
+  renderHabitDropdown();
+  $("savedHabits").innerHTML = savedHabits.length
+    ? savedHabits
+        .map(
+          (name) => /* HTML */ `<div class="habit-card">
+              <button
+                type="button"
+                class="habit-chip"
+                data-habit="${esc(name)}"
+                title="Registrar una recaída de este hábito"
+              >
+                ${esc(name)}${habitGroups[habitKey(name)]?.category ? /* HTML */ `<small class="record-class">${esc([habitGroups[habitKey(name)].category, habitGroups[habitKey(name)].subcategory].filter(Boolean).join(" / "))}</small>` : ""}
+                <span>＋</span>
+              </button>
+            </div>`,
+        )
+        .join("")
+    : '<p class="habit-empty">Todavía no tienes hábitos guardados. Añade el primero arriba.</p>';
+  const filtered = filterEntries(
+    entries,
+    $("search").value,
+    $("habitFilter").value,
+  );
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filtered.length / HISTORY_PAGE_SIZE),
+  );
+  historyPage = Math.min(historyPage, totalPages);
+  const start = (historyPage - 1) * HISTORY_PAGE_SIZE;
+  const visible = filtered.slice(start, start + HISTORY_PAGE_SIZE);
+  $("entries").innerHTML = visible.length
+    ? visible.map((e) => recordCard(e, true)).join("")
+    : /* HTML */ `<div class="empty">
+        <span>↗</span>
+        <h3>
+          ${entries.length ? "No hay coincidencias" : "Empieza con un registro"}
+        </h3>
+        <p>
+          ${entries.length ? "Prueba otra búsqueda o cambia el filtro." : "Añade el hábito, cuántas veces ocurrió y lo que quieras recordar."}
+        </p>
+        ${entries.length ? "" : '<button class="primary" id="firstEntry">Registrar mi primera recaída</button>'}
+      </div>`;
+  document
+    .getElementById("firstEntry")
+    ?.addEventListener("click", () => openForm());
+  $("results").textContent = filtered.length
+    ? `${start + 1}–${start + visible.length} de ${filtered.length} registros`
+    : "0 registros";
+  $("historyPage").textContent = `${historyPage} / ${totalPages}`;
+  $("prevHistory").disabled = historyPage === 1;
+  $("nextHistory").disabled = historyPage === totalPages;
+  renderCalendar();
+  renderStatistics();
+  renderClassOptions();
+  renderClassManager();
+}
+function localDateValue() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}T${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+function openForm(entry?: Entry | null, habit?: string) {
+  editing = entry?.id ?? null;
+  $("entryForm").reset();
+  $("dialogTitle").textContent = entry
+    ? "Editar registro"
+    : "Registrar recaída";
+  $("occurredAt").value = localDateValue();
+  if (entry)
+    for (const key of [
+      "habit",
+      "category",
+      "subcategory",
+      "occurredAt",
+      "endedAt",
+      "description",
+      "comment",
+    ] as const)
+      $(key).value =
+        key === "habit"
+          ? savedHabits.find((h) => habitKey(h) === habitKey(entry.habit)) ||
+            entry.habit
+          : String(entry[key] ?? "");
+  $("endedAt").min = $("occurredAt").value;
+  if (habit) {
+    $("habit").value = habit;
+    fillHabitGroup(habit);
+  }
+  setHabitList(false);
+  updateSaveHabit();
+  $("entryDialog").showModal();
+  setEntryMode(
+    entry?.type === "class" || (!entry?.type && entry?.category)
+      ? "class"
+      : "habit",
+  );
+  renderClassOptions(entry?.subcategory);
+  $(entryMode === "class" ? "category" : "habit").focus();
+}
+$("newEntry").onclick = () => openForm();
+for (const id of ["close", "cancel"])
+  $(id).onclick = () => $("entryDialog").close();
+$("entryForm").onsubmit = (event) => {
+  event.preventDefault();
+  const entry: Entry = {
+    id: editing || crypto.randomUUID(),
+    type: entryMode,
+    habit:
+      entryMode === "class"
+        ? $("subcategory").value.trim() || $("category").value.trim()
+        : $("habit").value.trim(),
+    category: entryMode === "class" ? $("category").value.trim() : "",
+    subcategory: entryMode === "class" ? $("subcategory").value.trim() : "",
+    occurredAt: $("occurredAt").value,
+    endedAt: $("endedAt").value,
+    count: editing ? (entries.find((e) => e.id === editing)?.count ?? 1) : 1,
+    description: $("description").value.trim(),
+    comment: $("comment").value.trim(),
+  };
+  const error = validateEntry(entry);
+  if (error) return toast(error);
+  const next = editing
+    ? entries.map((e) => (e.id === editing ? entry : e))
+    : [entry, ...entries];
+  if (!editing) historyPage = 1;
+  if (commit(next)) {
+    $("entryDialog").close();
+    toast(editing ? "Registro actualizado" : "Registro guardado");
+  }
+};
+$("search").oninput = () => {
+  historyPage = 1;
+  render();
+};
+$("habitFilter").onchange = () => {
+  historyPage = 1;
+  render();
+};
+$("prevHistory").onclick = () => {
+  if (historyPage > 1) {
+    historyPage--;
+    render();
+  }
+};
+$("nextHistory").onclick = () => {
+  if (
+    historyPage <
+    Math.ceil(
+      filterEntries(entries, $("search").value, $("habitFilter").value).length /
+        HISTORY_PAGE_SIZE,
+    )
+  ) {
+    historyPage++;
+    render();
+  }
+};
+$("entries").onclick = (event) => {
+  const button = (event.target as Element).closest<HTMLElement>(
+    "[data-action]",
+  );
+  if (!button) return;
+  const entry = entries.find(
+    (e) => e.id === button.closest<HTMLElement>("[data-id]")?.dataset.id,
+  );
+  if (!entry) return;
+  if (button.dataset.action === "details") showDetails(entry);
+};
+$("export").onclick = () => {
+  const blob = new Blob(
+    [
+      JSON.stringify(
+        {
+          application: "Ritmo",
+          version: 4,
+          exportedAt: new Date().toISOString(),
+          habits: savedHabits,
+          habitGroups,
+          classCatalog,
+          entries,
+        },
+        null,
+        2,
+      ),
+    ],
+    { type: "application/json" },
+  );
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `ritmo-registros-${localDateValue().slice(0, 10)}.json`;
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  toast("Copia de los registros exportada");
+};
+render();
 
-$('occurredAt').onchange=()=>{$('endedAt').min=$('occurredAt').value};
-function saveHabitName(value:string,category='',subcategory=''){const name=value.trim();if(!name){toast('Escribe un nombre para el hábito.');return false}if(storageError){toast('No se pueden guardar cambios hasta recuperar los datos del navegador.');return false}if(savedHabits.some(h=>habitKey(h)===habitKey(name))){toast('Este hábito ya está en tu lista.');return false}try{const next=[...savedHabits,name],groups={...habitGroups,[habitKey(name)]:{category:category.trim(),subcategory:subcategory.trim()}};const previous=localStorage.getItem(GROUPS_KEY);localStorage.setItem(GROUPS_KEY,JSON.stringify(groups));try{localStorage.setItem(HABITS_KEY,JSON.stringify(next))}catch(error){if(previous===null)localStorage.removeItem(GROUPS_KEY);else localStorage.setItem(GROUPS_KEY,previous);throw error}savedHabits=next;habitGroups=groups;render();toast('Hábito guardado en tu lista');return true}catch{toast('No se pudo guardar el hábito.');return false}}
-function updateSaveHabit(){$('saveTypedHabit').disabled=!$('habit').value.trim()}
-function setHabitList(open:boolean){$('habitDropdown').hidden=!open;$('toggleHabitList').setAttribute('aria-expanded',String(open))}
-function renderHabitDropdown(){const names=[...savedHabits].sort((a,b)=>a.localeCompare(b,'es'));$('habitDropdown').innerHTML=names.length?names.map(name=>`<button type="button" class="habit-option" data-pick-habit="${esc(name)}">${esc(name)}${habitGroups[habitKey(name)]?.category?`<small class="record-class">${esc([habitGroups[habitKey(name)].category,habitGroups[habitKey(name)].subcategory].filter(Boolean).join(' / '))}</small>`:''}</button>`).join(''):'<p class="habit-empty">Todavía no tienes hábitos guardados. Escribe un nombre y pulsa Guardar.</p>';updateSaveHabit()}
-$('habit').oninput=updateSaveHabit;$('saveTypedHabit').onclick=()=>saveHabitName($('habit').value);$('toggleHabitList').onclick=()=>setHabitList(Boolean($('habitDropdown').hidden));$('habitDropdown').onclick=event=>{const button=(event.target as Element).closest<HTMLElement>('[data-pick-habit]');if(button){$('habit').value=button.dataset.pickHabit||'';fillHabitGroup(button.dataset.pickHabit||'');setHabitList(false);updateSaveHabit();$('habit').focus()}};
-document.addEventListener('click',event=>{if(!(event.target as Element).closest<HTMLElement>('.habit-picker'))setHabitList(false)});$('entryDialog').addEventListener('keydown',event=>{if(event.key==='Escape'&&!$('habitDropdown').hidden){event.preventDefault();event.stopPropagation();setHabitList(false);$('toggleHabitList').focus()}});
-$('savedHabits').onclick=event=>{const button=(event.target as Element).closest<HTMLElement>('[data-habit]');if(button)openForm(null,button.dataset.habit)};
-function navigate(view:View,focus=false){const copy={history:['Tu espacio para avanzar','Registra lo que pasó, reflexiona y sigue a tu ritmo.'],habits:['Un cambio empieza aquí','Guarda los hábitos que quieres trabajar para tenerlos siempre a mano.'],tracker:['Constancia, un día a la vez','Marca tus hábitos diarios y sigue tu progreso mensual.'],stats:['Tu actividad, en perspectiva','Consulta tus tiempos y recaídas por clase y subclase.'],calendar:['Mira tu recorrido','Explora tus registros y sus fechas, un día a la vez.']}[view];$('viewHeading').textContent=copy[0];$('viewDescription').textContent=copy[1];for(const [id,value] of [['habitsView','habits'],['historyView','history'],['calendarView','calendar'],['statsView','stats'],['trackerView','tracker']])$(id).hidden=view!==value;$('pageTitle').textContent={habits:'Añadir hábito',history:'Historial',calendar:'Calendario',stats:'Estadísticas',tracker:'Tracker'}[view];document.querySelectorAll<HTMLAnchorElement>('[data-view]').forEach(link=>{const active=link.dataset.view===view;link.classList.toggle('active',active);if(active)link.setAttribute('aria-current','page');else link.removeAttribute('aria-current')});if(focus)$('habitName').focus();if(view==='calendar')renderCalendar();if(view==='stats')renderStatistics()}
-function route(){navigate(( {'#habitos':'habits','#calendario':'calendar','#estadisticas':'stats','#tracker':'tracker'} as Record<string,View>)[location.hash]||'history')}
-window.addEventListener('hashchange',route);document.querySelectorAll<HTMLAnchorElement>('[data-view]').forEach(link=>link.addEventListener('click',()=>navigate(link.dataset.view as View,link.dataset.view==='habits')));route();
-let collapsed=false;try{collapsed=localStorage.getItem('ritmo-menu-collapsed')==='true'}catch{}
-function applyMenu(){document.body.classList.toggle('menu-collapsed',collapsed);$('sidebarToggle').textContent=window.matchMedia('(max-width:760px)').matches?'×':(collapsed?'»':'«');$('sidebarToggle').setAttribute('aria-expanded',String(!collapsed));$('sidebarToggle').setAttribute('aria-label',collapsed?'Expandir menú':'Contraer menú')}
-applyMenu();$('sidebarToggle').onclick=()=>{collapsed=!collapsed;applyMenu();try{localStorage.setItem('ritmo-menu-collapsed',String(collapsed))}catch{toast('El estado del menú se conservará solo en esta sesión.')}};
-function renderCalendar(){const year=calendarMonth.getFullYear(),month=calendarMonth.getMonth(),first=new Date(year,month,1),offset=(first.getDay()+6)%7,days=new Date(year,month+1,0).getDate();$('calendarTitle').textContent=new Intl.DateTimeFormat('es',{month:'long',year:'numeric'}).format(first);let html='<div class="calendar-blank" aria-hidden="true"></div>'.repeat(offset);for(let day=1;day<=days;day++){const key=dateKey(new Date(year,month,day)),events=eventsForDay(key,entries);html+=`<button class="calendar-day ${key===selectedDay?'selected':''} ${key===dateKey(new Date())?'today':''}" data-day="${key}" aria-label="${key}, ${events.length} eventos" aria-pressed="${key===selectedDay}"><strong>${day}</strong>${events.slice(0,2).map(e=>`<span class="calendar-event">${esc(e.kind)}: ${esc(e.name)}</span>`).join('')}${events.length>2?`<small>+${events.length-2} más</small>`:''}</button>`}$('calendarGrid').innerHTML=html;$('dayTitle').textContent=new Intl.DateTimeFormat('es',{dateStyle:'long'}).format(new Date(selectedDay+'T12:00:00'));const events=eventsForDay(selectedDay,entries);$('dayEvents').innerHTML=events.length?events.map(e=>recordCard(e)).join(''):'<p class="habit-empty">No hay eventos para este día.</p>'}
-function moveMonth(offset:number){calendarMonth=new Date(calendarMonth.getFullYear(),calendarMonth.getMonth()+offset,1);selectedDay=dateKey(calendarMonth);renderCalendar()}
-$('prevMonth').onclick=()=>moveMonth(-1);$('nextMonth').onclick=()=>moveMonth(1);$('currentMonth').onclick=()=>{calendarMonth=new Date();selectedDay=dateKey(new Date());renderCalendar()};$('calendarGrid').onclick=event=>{const button=(event.target as Element).closest<HTMLElement>('[data-day]');if(button){selectedDay=button.dataset.day||selectedDay;renderCalendar()}};
+$("occurredAt").onchange = () => {
+  $("endedAt").min = $("occurredAt").value;
+};
+function saveHabitName(value: string, category = "", subcategory = "") {
+  const name = value.trim();
+  if (!name) {
+    toast("Escribe un nombre para el hábito.");
+    return false;
+  }
+  if (storageError) {
+    toast(
+      "No se pueden guardar cambios hasta recuperar los datos del navegador.",
+    );
+    return false;
+  }
+  if (savedHabits.some((h) => habitKey(h) === habitKey(name))) {
+    toast("Este hábito ya está en tu lista.");
+    return false;
+  }
+  try {
+    const next = [...savedHabits, name],
+      groups = {
+        ...habitGroups,
+        [habitKey(name)]: {
+          category: category.trim(),
+          subcategory: subcategory.trim(),
+        },
+      };
+    const previous = localStorage.getItem(GROUPS_KEY);
+    localStorage.setItem(GROUPS_KEY, JSON.stringify(groups));
+    try {
+      localStorage.setItem(HABITS_KEY, JSON.stringify(next));
+    } catch (error) {
+      if (previous === null) localStorage.removeItem(GROUPS_KEY);
+      else localStorage.setItem(GROUPS_KEY, previous);
+      throw error;
+    }
+    savedHabits = next;
+    habitGroups = groups;
+    render();
+    toast("Hábito guardado en tu lista");
+    return true;
+  } catch {
+    toast("No se pudo guardar el hábito.");
+    return false;
+  }
+}
+function updateSaveHabit() {
+  $("saveTypedHabit").disabled = !$("habit").value.trim();
+}
+function setHabitList(open: boolean) {
+  $("habitDropdown").hidden = !open;
+  $("toggleHabitList").setAttribute("aria-expanded", String(open));
+}
+function renderHabitDropdown() {
+  const names = [...savedHabits].sort((a, b) => a.localeCompare(b, "es"));
+  $("habitDropdown").innerHTML = names.length
+    ? names
+        .map(
+          (name) => /* HTML */ `<button
+              type="button"
+              class="habit-option"
+              data-pick-habit="${esc(name)}"
+            >
+              ${esc(name)}${habitGroups[habitKey(name)]?.category ? /* HTML */ `<small class="record-class">${esc([habitGroups[habitKey(name)].category, habitGroups[habitKey(name)].subcategory].filter(Boolean).join(" / "))}</small>` : ""}
+            </button>`,
+        )
+        .join("")
+    : '<p class="habit-empty">Todavía no tienes hábitos guardados. Escribe un nombre y pulsa Guardar.</p>';
+  updateSaveHabit();
+}
+$("habit").oninput = updateSaveHabit;
+$("saveTypedHabit").onclick = () => saveHabitName($("habit").value);
+$("toggleHabitList").onclick = () =>
+  setHabitList(Boolean($("habitDropdown").hidden));
+$("habitDropdown").onclick = (event) => {
+  const button = (event.target as Element).closest<HTMLElement>(
+    "[data-pick-habit]",
+  );
+  if (button) {
+    $("habit").value = button.dataset.pickHabit || "";
+    fillHabitGroup(button.dataset.pickHabit || "");
+    setHabitList(false);
+    updateSaveHabit();
+    $("habit").focus();
+  }
+};
+document.addEventListener("click", (event) => {
+  if (!(event.target as Element).closest<HTMLElement>(".habit-picker"))
+    setHabitList(false);
+});
+$("entryDialog").addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !$("habitDropdown").hidden) {
+    event.preventDefault();
+    event.stopPropagation();
+    setHabitList(false);
+    $("toggleHabitList").focus();
+  }
+});
+$("savedHabits").onclick = (event) => {
+  const button = (event.target as Element).closest<HTMLElement>("[data-habit]");
+  if (button) openForm(null, button.dataset.habit);
+};
+function navigate(view: View, focus = false) {
+  const copy = {
+    history: [
+      "Tu espacio para avanzar",
+      "Registra lo que pasó, reflexiona y sigue a tu ritmo.",
+    ],
+    habits: [
+      "Un cambio empieza aquí",
+      "Guarda los hábitos que quieres trabajar para tenerlos siempre a mano.",
+    ],
+    tracker: [
+      "Constancia, un día a la vez",
+      "Marca tus hábitos diarios y sigue tu progreso mensual.",
+    ],
+    stats: [
+      "Tu actividad, en perspectiva",
+      "Consulta tus tiempos y recaídas por clase y subclase.",
+    ],
+    calendar: [
+      "Mira tu recorrido",
+      "Explora tus registros y sus fechas, un día a la vez.",
+    ],
+  }[view];
+  $("viewHeading").textContent = copy[0];
+  $("viewDescription").textContent = copy[1];
+  for (const [id, value] of [
+    ["habitsView", "habits"],
+    ["historyView", "history"],
+    ["calendarView", "calendar"],
+    ["statsView", "stats"],
+    ["trackerView", "tracker"],
+  ])
+    $(id).hidden = view !== value;
+  $("pageTitle").textContent = {
+    habits: "Añadir hábito",
+    history: "Historial",
+    calendar: "Calendario",
+    stats: "Estadísticas",
+    tracker: "Tracker",
+  }[view];
+  document
+    .querySelectorAll<HTMLAnchorElement>("[data-view]")
+    .forEach((link) => {
+      const active = link.dataset.view === view;
+      link.classList.toggle("active", active);
+      if (active) link.setAttribute("aria-current", "page");
+      else link.removeAttribute("aria-current");
+    });
+  if (focus) $("habitName").focus();
+  if (view === "calendar") renderCalendar();
+  if (view === "stats") renderStatistics();
+}
+function route() {
+  navigate(
+    (
+      {
+        "#habitos": "habits",
+        "#calendario": "calendar",
+        "#estadisticas": "stats",
+        "#tracker": "tracker",
+      } as Record<string, View>
+    )[location.hash] || "history",
+  );
+}
+window.addEventListener("hashchange", route);
+document
+  .querySelectorAll<HTMLAnchorElement>("[data-view]")
+  .forEach((link) =>
+    link.addEventListener("click", () =>
+      navigate(link.dataset.view as View, link.dataset.view === "habits"),
+    ),
+  );
+route();
+let collapsed = false;
+try {
+  collapsed = localStorage.getItem("ritmo-menu-collapsed") === "true";
+} catch {}
+function applyMenu() {
+  document.body.classList.toggle("menu-collapsed", collapsed);
+  $("sidebarToggle").textContent = window.matchMedia("(max-width:760px)")
+    .matches
+    ? "×"
+    : collapsed
+      ? "»"
+      : "«";
+  $("sidebarToggle").setAttribute("aria-expanded", String(!collapsed));
+  $("sidebarToggle").setAttribute(
+    "aria-label",
+    collapsed ? "Expandir menú" : "Contraer menú",
+  );
+}
+applyMenu();
+$("sidebarToggle").onclick = () => {
+  collapsed = !collapsed;
+  applyMenu();
+  try {
+    localStorage.setItem("ritmo-menu-collapsed", String(collapsed));
+  } catch {
+    toast("El estado del menú se conservará solo en esta sesión.");
+  }
+};
+function renderCalendar() {
+  const year = calendarMonth.getFullYear(),
+    month = calendarMonth.getMonth(),
+    first = new Date(year, month, 1),
+    offset = (first.getDay() + 6) % 7,
+    days = new Date(year, month + 1, 0).getDate();
+  $("calendarTitle").textContent = new Intl.DateTimeFormat("es", {
+    month: "long",
+    year: "numeric",
+  }).format(first);
+  let html = '<div class="calendar-blank" aria-hidden="true"></div>'.repeat(
+    offset,
+  );
+  for (let day = 1; day <= days; day++) {
+    const key = dateKey(new Date(year, month, day)),
+      events = eventsForDay(key, entries);
+    html += /* HTML */ `<button
+      class="calendar-day ${key === selectedDay ? "selected" : ""} ${key === dateKey(new Date()) ? "today" : ""}"
+      data-day="${key}"
+      aria-label="${key}, ${events.length} eventos"
+      aria-pressed="${key === selectedDay}"
+    >
+      <strong>${day}</strong>${events
+        .slice(0, 2)
+        .map(
+          (e) => /* HTML */ `<span class="calendar-event"
+              >${esc(e.kind)}: ${esc(e.name)}</span
+            >`,
+        )
+        .join(
+          "",
+        )}${events.length > 2 ? /* HTML */ `<small>+${events.length - 2} más</small>` : ""}
+    </button>`;
+  }
+  $("calendarGrid").innerHTML = html;
+  $("dayTitle").textContent = new Intl.DateTimeFormat("es", {
+    dateStyle: "long",
+  }).format(new Date(selectedDay + "T12:00:00"));
+  const events = eventsForDay(selectedDay, entries);
+  $("dayEvents").innerHTML = events.length
+    ? events.map((e) => recordCard(e)).join("")
+    : '<p class="habit-empty">No hay eventos para este día.</p>';
+}
+function moveMonth(offset: number) {
+  calendarMonth = new Date(
+    calendarMonth.getFullYear(),
+    calendarMonth.getMonth() + offset,
+    1,
+  );
+  selectedDay = dateKey(calendarMonth);
+  renderCalendar();
+}
+$("prevMonth").onclick = () => moveMonth(-1);
+$("nextMonth").onclick = () => moveMonth(1);
+$("currentMonth").onclick = () => {
+  calendarMonth = new Date();
+  selectedDay = dateKey(new Date());
+  renderCalendar();
+};
+$("calendarGrid").onclick = (event) => {
+  const button = (event.target as Element).closest<HTMLElement>("[data-day]");
+  if (button) {
+    selectedDay = button.dataset.day || selectedDay;
+    renderCalendar();
+  }
+};
 
-const mobileMedia=window.matchMedia('(max-width:760px)');let mobileOpen=false;
-function setMobileMenu(open:boolean){mobileOpen=open&&mobileMedia.matches;document.body.classList.toggle('mobile-menu-open',mobileOpen);$('menuBackdrop').hidden=!mobileOpen;$('mobileLogo').setAttribute('aria-expanded',String(mobileOpen));$('mobileLogo').setAttribute('aria-label',mobileOpen?'Cerrar menú':'Abrir menú');$('sidebar').inert=mobileMedia.matches&&!mobileOpen;if(mobileMedia.matches){$('sidebarToggle').textContent='×';$('sidebarToggle').setAttribute('aria-label','Cerrar menú')}else applyMenu();if(mobileOpen)$('sidebarToggle').focus()}
-$('mobileLogo').onclick=()=>setMobileMenu(!mobileOpen);$('menuBackdrop').onclick=()=>{setMobileMenu(false);$('mobileLogo').focus()};const desktopToggle=$('sidebarToggle').onclick;$('sidebarToggle').onclick=event=>{if(mobileMedia.matches){setMobileMenu(false);$('mobileLogo').focus()}else desktopToggle?.call($('sidebarToggle'),event)};
-document.querySelectorAll<HTMLAnchorElement>('[data-view]').forEach(link=>link.addEventListener('click',()=>{if(mobileMedia.matches){setMobileMenu(false);if(link.dataset.view==='habits')$('habitName').focus();else $('mobileLogo').focus()}}));document.addEventListener('keydown',event=>{if(event.key==='Escape'&&mobileOpen){setMobileMenu(false);$('mobileLogo').focus()}if(event.key==='Tab'&&mobileOpen){const focusable=[...$('sidebar').querySelectorAll<HTMLElement>('a,button')];const first=focusable[0],last=focusable.at(-1);if(event.shiftKey&&document.activeElement===first){event.preventDefault();last?.focus()}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus()}}});mobileMedia.addEventListener('change',()=>setMobileMenu(false));setMobileMenu(false);
+const mobileMedia = window.matchMedia("(max-width:760px)");
+let mobileOpen = false;
+function setMobileMenu(open: boolean) {
+  mobileOpen = open && mobileMedia.matches;
+  document.body.classList.toggle("mobile-menu-open", mobileOpen);
+  $("menuBackdrop").hidden = !mobileOpen;
+  $("mobileLogo").setAttribute("aria-expanded", String(mobileOpen));
+  $("mobileLogo").setAttribute(
+    "aria-label",
+    mobileOpen ? "Cerrar menú" : "Abrir menú",
+  );
+  $("sidebar").inert = mobileMedia.matches && !mobileOpen;
+  if (mobileMedia.matches) {
+    $("sidebarToggle").textContent = "×";
+    $("sidebarToggle").setAttribute("aria-label", "Cerrar menú");
+  } else applyMenu();
+  if (mobileOpen) $("sidebarToggle").focus();
+}
+$("mobileLogo").onclick = () => setMobileMenu(!mobileOpen);
+$("menuBackdrop").onclick = () => {
+  setMobileMenu(false);
+  $("mobileLogo").focus();
+};
+const desktopToggle = $("sidebarToggle").onclick;
+$("sidebarToggle").onclick = (event) => {
+  if (mobileMedia.matches) {
+    setMobileMenu(false);
+    $("mobileLogo").focus();
+  } else desktopToggle?.call($("sidebarToggle"), event);
+};
+document.querySelectorAll<HTMLAnchorElement>("[data-view]").forEach((link) =>
+  link.addEventListener("click", () => {
+    if (mobileMedia.matches) {
+      setMobileMenu(false);
+      if (link.dataset.view === "habits") $("habitName").focus();
+      else $("mobileLogo").focus();
+    }
+  }),
+);
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && mobileOpen) {
+    setMobileMenu(false);
+    $("mobileLogo").focus();
+  }
+  if (event.key === "Tab" && mobileOpen) {
+    const focusable = [
+      ...$("sidebar").querySelectorAll<HTMLElement>("a,button"),
+    ];
+    const first = focusable[0],
+      last = focusable.at(-1);
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last?.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  }
+});
+mobileMedia.addEventListener("change", () => setMobileMenu(false));
+setMobileMenu(false);
 
-function fillHabitGroup(name:string){const g=habitGroups[habitKey(name)];$('category').value=g?.category||'';$('subcategory').value=g?.subcategory||'';renderClassOptions()}
-function renderClassOptions(preferred?:string){const groups=[...Object.values(habitGroups),...entries,...Object.values(classCatalog).flatMap(c=>[{category:c.name,subcategory:''},...c.subclasses.map(s=>({category:c.name,subcategory:s}))])];const categories=[...new Set(groups.map(g=>g.category).filter((c):c is string=>Boolean(c)))];$('categoryOptions').innerHTML=categories.map(c=>`<option value="${esc(c)}"></option>`).join('');const current=$('category').value.trim();const recognized=categories.some(c=>habitKey(c)===habitKey(current));const names=current&&recognized?[...new Map(groups.filter(g=>habitKey(g.category||'')===habitKey(current)&&g.subcategory).map(g=>[habitKey(g.subcategory!),g.subcategory!])).values()]:[];const previous=preferred??$('subcategory').value;$('subcategoryOptions').innerHTML=names.map(c=>`<option value="${esc(c)}"></option>`).join('');$('subcategory').innerHTML=`<option value="">${!recognized?'Selecciona primero una clase':names.length?'Sin subclase':'Esta clase no tiene subclases'}</option>`+names.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');$('subcategory').value=names.find(n=>habitKey(n)===habitKey(previous))||'';$('subcategory').disabled=entryMode!=='class'||!recognized;}
-$('category').oninput=()=>renderClassOptions();$('category').onchange=()=>renderClassOptions();$('savedCategory').onchange=()=>{draftSubclasses=[...(classCatalog[habitKey($('savedCategory').value)]?.subclasses||[])];renderClassManager();renderClassOptions()};
-function renderStatistics(){const previous=$('statsCategory').value,categories=[...new Set(entries.map(e=>e.category||'Sin clase'))].sort();$('statsCategory').innerHTML='<option value="">Todas las clases</option>'+categories.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');$('statsCategory').value=categories.includes(previous)?previous:'';const period=$('statsPeriod').value as StatisticsPeriod;const metric=$('statsMetric').value,days=periodData(entries,statsWeek,period,metric,$('statsCategory').value);if(!days.some(d=>d.day===statsSelected))statsSelected=days[0].day;const selected=days.find(d=>d.day===statsSelected)!,format=(v:number)=>metric==='time'?formatDuration(v):`${v} ${v===1?'vez':'veces'}`;$('statsTotal').textContent=format(selected.value);$('statsDay').textContent=new Intl.DateTimeFormat('es',(period==='year'?{month:'long',year:'numeric'}:{weekday:'long',day:'numeric',month:'long'})).format(selected.date);const maximum=Math.max(1,...days.map(d=>d.value)),axisMax=metric==='time'?Math.max(60,Math.ceil(maximum/60)*60):Math.max(4,Math.ceil(maximum/4)*4);$('activityChart').innerHTML=`<div class="chart-axis">${[1,.75,.5,.25,0].map(p=>`<span>${metric==='time'?`${Math.round(axisMax*p/6)/10} h`:Math.round(axisMax*p)}</span>`).join('')}</div><div class="chart-bars" style="grid-template-columns:repeat(${days.length},minmax(0,1fr))">${days.map(d=>`<button class="chart-column ${d.day===statsSelected?'selected':''}" data-stats-day="${d.day}" aria-pressed="${d.day===statsSelected}" aria-label="${d.day}: ${format(d.value)}"><span class="bar-area"><span class="bar-value">${format(d.value)}</span><span class="chart-bar" style="height:${d.value/axisMax*100}%"></span></span><span>${period==='month'?d.date.getDate():new Intl.DateTimeFormat('es',period==='year'?{month:'short'}:{weekday:'short'}).format(d.date)}</span></button>`).join('')}</div>`;const short=(d:Date)=>new Intl.DateTimeFormat('es',{day:'numeric',month:'short'}).format(d);$('weekLabel').textContent=period==='month'?new Intl.DateTimeFormat('es',{month:'long',year:'numeric'}).format(statsWeek):period==='year'?String(statsWeek.getFullYear()):`${short(days[0].date)} — ${short(days[6].date)} ${days[6].date.getFullYear()}`;$('thisWeek').textContent={week:'Esta semana',month:'Este mes',year:'Este año'}[period];$('prevWeek').setAttribute('aria-label','Período anterior');$('nextWeek').setAttribute('aria-label','Período siguiente');$('activityChart').classList.toggle('monthly-chart',period==='month');const missing=selected.records.filter(e=>!e.endedAt).length;$('statsNote').textContent=metric==='time'?`El tiempo se calcula entre inicio y final y se asigna al día de inicio.${missing?` ${missing} registros sin fecha final no aportan tiempo.`:''}`:'La gráfica suma las veces indicadas en cada registro, según su fecha de inicio.';const rows=breakdown(selected.records,metric);$('statsBreakdown').innerHTML=rows.length?rows.map(row=>`<article class="activity-row"><span class="activity-avatar">${esc(row.name.slice(0,1).toUpperCase())}</span><div><h3>${esc(row.name)}</h3><small>${esc(row.category)}</small></div><strong>${format(row.value)}</strong></article>`).join(''):'<div class="empty"><h3>No hay registros para esta selección</h3><p>Registra una recaída o selecciona otro día.</p></div>'}
-$('statsMetric').onchange=renderStatistics;$('statsCategory').onchange=renderStatistics;$('activityChart').onclick=event=>{const b=(event.target as Element).closest<HTMLElement>('[data-stats-day]');if(b){statsSelected=b.dataset.statsDay||statsSelected;renderStatistics()}};function moveWeek(n:number){const period=$('statsPeriod').value;statsWeek=period==='month'?new Date(statsWeek.getFullYear(),statsWeek.getMonth()+n,1):period==='year'?new Date(statsWeek.getFullYear()+n,0,1):new Date(statsWeek.getFullYear(),statsWeek.getMonth(),statsWeek.getDate()+n*7);statsSelected=dateKey(statsWeek);renderStatistics()}
-$('prevWeek').onclick=()=>moveWeek(-1);$('nextWeek').onclick=()=>moveWeek(1);$('thisWeek').onclick=()=>{statsWeek=new Date();statsSelected=dateKey(new Date());if($('statsPeriod').value==='year')statsSelected=dateKey(new Date(statsWeek.getFullYear(),statsWeek.getMonth(),1));renderStatistics()};$('statsPeriod').onchange=()=>{statsWeek=new Date(statsSelected+'T12:00:00');if($('statsPeriod').value==='year')statsSelected=dateKey(new Date(statsWeek.getFullYear(),statsWeek.getMonth(),1));renderStatistics()};
+function fillHabitGroup(name: string) {
+  const g = habitGroups[habitKey(name)];
+  $("category").value = g?.category || "";
+  $("subcategory").value = g?.subcategory || "";
+  renderClassOptions();
+}
+function renderClassOptions(preferred?: string) {
+  const groups = [
+    ...Object.values(habitGroups),
+    ...entries,
+    ...Object.values(classCatalog).flatMap((c) => [
+      { category: c.name, subcategory: "" },
+      ...c.subclasses.map((s) => ({ category: c.name, subcategory: s })),
+    ]),
+  ];
+  const categories = [
+    ...new Set(
+      groups.map((g) => g.category).filter((c): c is string => Boolean(c)),
+    ),
+  ];
+  $("categoryOptions").innerHTML = categories
+    .map((c) => /* HTML */ `<option value="${esc(c)}"></option>`)
+    .join("");
+  const current = $("category").value.trim();
+  const recognized = categories.some((c) => habitKey(c) === habitKey(current));
+  const names =
+    current && recognized
+      ? [
+          ...new Map(
+            groups
+              .filter(
+                (g) =>
+                  habitKey(g.category || "") === habitKey(current) &&
+                  g.subcategory,
+              )
+              .map((g) => [habitKey(g.subcategory!), g.subcategory!]),
+          ).values(),
+        ]
+      : [];
+  const previous = preferred ?? $("subcategory").value;
+  $("subcategoryOptions").innerHTML = names
+    .map((c) => /* HTML */ `<option value="${esc(c)}"></option>`)
+    .join("");
+  $("subcategory").innerHTML =
+    /* HTML */ `<option value="">${!recognized ? "Selecciona primero una clase" : names.length ? "Sin subclase" : "Esta clase no tiene subclases"}</option>` +
+    names
+      .map((c) => /* HTML */ `<option value="${esc(c)}">${esc(c)}</option>`)
+      .join("");
+  $("subcategory").value =
+    names.find((n) => habitKey(n) === habitKey(previous)) || "";
+  $("subcategory").disabled = entryMode !== "class" || !recognized;
+}
+$("category").oninput = () => renderClassOptions();
+$("category").onchange = () => renderClassOptions();
+$("savedCategory").onchange = () => {
+  draftSubclasses = [
+    ...(classCatalog[habitKey($("savedCategory").value)]?.subclasses || []),
+  ];
+  renderClassManager();
+  renderClassOptions();
+};
+function renderStatistics() {
+  const previous = $("statsCategory").value,
+    categories = [
+      ...new Set(entries.map((e) => e.category || "Sin clase")),
+    ].sort();
+  $("statsCategory").innerHTML =
+    '<option value="">Todas las clases</option>' +
+    categories
+      .map((c) => /* HTML */ `<option value="${esc(c)}">${esc(c)}</option>`)
+      .join("");
+  $("statsCategory").value = categories.includes(previous) ? previous : "";
+  const period = $("statsPeriod").value as StatisticsPeriod;
+  const metric = $("statsMetric").value,
+    days = periodData(
+      entries,
+      statsWeek,
+      period,
+      metric,
+      $("statsCategory").value,
+    );
+  if (!days.some((d) => d.day === statsSelected)) statsSelected = days[0].day;
+  const selected = days.find((d) => d.day === statsSelected)!,
+    format = (v: number) =>
+      metric === "time"
+        ? formatDuration(v)
+        : `${v} ${v === 1 ? "vez" : "veces"}`;
+  $("statsTotal").textContent = format(selected.value);
+  $("statsDay").textContent = new Intl.DateTimeFormat(
+    "es",
+    period === "year"
+      ? { month: "long", year: "numeric" }
+      : { weekday: "long", day: "numeric", month: "long" },
+  ).format(selected.date);
+  const maximum = Math.max(1, ...days.map((d) => d.value)),
+    axisMax =
+      metric === "time"
+        ? Math.max(60, Math.ceil(maximum / 60) * 60)
+        : Math.max(4, Math.ceil(maximum / 4) * 4);
+  $("activityChart").innerHTML = /* HTML */ `<div class="chart-axis">
+      ${[1, 0.75, 0.5, 0.25, 0].map((p) => /* HTML */ `<span>${metric === "time" ? `${Math.round((axisMax * p) / 6) / 10} h` : Math.round(axisMax * p)}</span>`).join("")}
+    </div>
+    <div
+      class="chart-bars"
+      style="grid-template-columns:repeat(${days.length},minmax(0,1fr))"
+    >
+      ${days
+        .map(
+          (d) => /* HTML */ `<button
+              class="chart-column ${d.day === statsSelected ? "selected" : ""}"
+              data-stats-day="${d.day}"
+              aria-pressed="${d.day === statsSelected}"
+              aria-label="${d.day}: ${format(d.value)}"
+            >
+              <span class="bar-area"
+                ><span class="bar-value">${format(d.value)}</span
+                ><span
+                  class="chart-bar"
+                  style="height:${(d.value / axisMax) * 100}%"
+                ></span></span
+              ><span
+                >${period === "month" ? d.date.getDate() : new Intl.DateTimeFormat("es", period === "year" ? { month: "short" } : { weekday: "short" }).format(d.date)}</span
+              >
+            </button>`,
+        )
+        .join("")}
+    </div>`;
+  const short = (d: Date) =>
+    new Intl.DateTimeFormat("es", { day: "numeric", month: "short" }).format(d);
+  $("weekLabel").textContent =
+    period === "month"
+      ? new Intl.DateTimeFormat("es", {
+          month: "long",
+          year: "numeric",
+        }).format(statsWeek)
+      : period === "year"
+        ? String(statsWeek.getFullYear())
+        : `${short(days[0].date)} — ${short(days[6].date)} ${days[6].date.getFullYear()}`;
+  $("thisWeek").textContent = {
+    week: "Esta semana",
+    month: "Este mes",
+    year: "Este año",
+  }[period];
+  $("prevWeek").setAttribute("aria-label", "Período anterior");
+  $("nextWeek").setAttribute("aria-label", "Período siguiente");
+  $("activityChart").classList.toggle("monthly-chart", period === "month");
+  const missing = selected.records.filter((e) => !e.endedAt).length;
+  $("statsNote").textContent =
+    metric === "time"
+      ? `El tiempo se calcula entre inicio y final y se asigna al día de inicio.${missing ? ` ${missing} registros sin fecha final no aportan tiempo.` : ""}`
+      : "La gráfica suma las veces indicadas en cada registro, según su fecha de inicio.";
+  const rows = breakdown(selected.records, metric);
+  $("statsBreakdown").innerHTML = rows.length
+    ? rows
+        .map(
+          (row) => /* HTML */ `<article class="activity-row">
+              <span class="activity-avatar"
+                >${esc(row.name.slice(0, 1).toUpperCase())}</span
+              >
+              <div>
+                <h3>${esc(row.name)}</h3>
+                <small>${esc(row.category)}</small>
+              </div>
+              <strong>${format(row.value)}</strong>
+            </article>`,
+        )
+        .join("")
+    : '<div class="empty"><h3>No hay registros para esta selección</h3><p>Registra una recaída o selecciona otro día.</p></div>';
+}
+$("statsMetric").onchange = renderStatistics;
+$("statsCategory").onchange = renderStatistics;
+$("activityChart").onclick = (event) => {
+  const b = (event.target as Element).closest<HTMLElement>("[data-stats-day]");
+  if (b) {
+    statsSelected = b.dataset.statsDay || statsSelected;
+    renderStatistics();
+  }
+};
+function moveWeek(n: number) {
+  const period = $("statsPeriod").value;
+  statsWeek =
+    period === "month"
+      ? new Date(statsWeek.getFullYear(), statsWeek.getMonth() + n, 1)
+      : period === "year"
+        ? new Date(statsWeek.getFullYear() + n, 0, 1)
+        : new Date(
+            statsWeek.getFullYear(),
+            statsWeek.getMonth(),
+            statsWeek.getDate() + n * 7,
+          );
+  statsSelected = dateKey(statsWeek);
+  renderStatistics();
+}
+$("prevWeek").onclick = () => moveWeek(-1);
+$("nextWeek").onclick = () => moveWeek(1);
+$("thisWeek").onclick = () => {
+  statsWeek = new Date();
+  statsSelected = dateKey(new Date());
+  if ($("statsPeriod").value === "year")
+    statsSelected = dateKey(
+      new Date(statsWeek.getFullYear(), statsWeek.getMonth(), 1),
+    );
+  renderStatistics();
+};
+$("statsPeriod").onchange = () => {
+  statsWeek = new Date(statsSelected + "T12:00:00");
+  if ($("statsPeriod").value === "year")
+    statsSelected = dateKey(
+      new Date(statsWeek.getFullYear(), statsWeek.getMonth(), 1),
+    );
+  renderStatistics();
+};
 
-function renderClassManager(){$('subclassChips').innerHTML=draftSubclasses.map((name,index)=>`<span class="badge">${esc(name)}<button type="button" data-remove-subclass="${index}" aria-label="Quitar ${esc(name)}">×</button></span>`).join('')}
-function addDraftSubclass(){const name=$('savedSubcategory').value.trim();if(!name)return toast('Escribe el nombre de la subclase.');if(draftSubclasses.some(s=>habitKey(s)===habitKey(name)))return toast('Esta subclase ya está añadida.');draftSubclasses.push(name);$('savedSubcategory').value='';renderClassManager();$('savedSubcategory').focus()}
-$('addSubclass').onclick=addDraftSubclass;$('savedSubcategory').onkeydown=event=>{if(event.key==='Enter'){event.preventDefault();addDraftSubclass()}};$('subclassChips').onclick=event=>{const b=(event.target as Element).closest<HTMLElement>('[data-remove-subclass]');if(b){draftSubclasses.splice(Number(b.dataset.removeSubclass),1);renderClassManager()}};
-$('habitForm').onsubmit=event=>{event.preventDefault();if(saveHabitName($('habitName').value))$('habitForm').reset()};
-$('classificationForm').onsubmit=event=>{event.preventDefault();const category=$('savedCategory').value.trim();if(!category)return toast('Escribe una clase.');if($('savedSubcategory').value.trim())addDraftSubclass();if(storageError)return toast('No se pueden guardar cambios hasta recuperar los datos.');const key=habitKey(category);const previous=classCatalog[key]?.subclasses||[];const subclasses=[...new Map([...previous,...draftSubclasses].map(s=>[habitKey(s),s])).values()];const next={...classCatalog,[key]:{name:category,subclasses}};try{localStorage.setItem(CATALOG_KEY,JSON.stringify(next));classCatalog=next;$('classificationForm').reset();draftSubclasses=[];renderClassManager();renderClassOptions();toast('Clasificación guardada')}catch{toast('No se pudo guardar la clasificación.')}};
-$('toggleSavedNames').onclick=()=>{const open=$('savedHabits').hidden;$('savedHabits').hidden=!open;$('toggleSavedNames').setAttribute('aria-expanded',String(open));$('toggleSavedNames').textContent=open?'Ocultar nombres guardados ▴':'Ver nombres guardados ▾'};
+function renderClassManager() {
+  $("subclassChips").innerHTML = draftSubclasses
+    .map(
+      (name, index) => /* HTML */ `<span class="badge"
+          >${esc(name)}<button
+            type="button"
+            data-remove-subclass="${index}"
+            aria-label="Quitar ${esc(name)}"
+          >
+            ×
+          </button></span
+        >`,
+    )
+    .join("");
+}
+function addDraftSubclass() {
+  const name = $("savedSubcategory").value.trim();
+  if (!name) return toast("Escribe el nombre de la subclase.");
+  if (draftSubclasses.some((s) => habitKey(s) === habitKey(name)))
+    return toast("Esta subclase ya está añadida.");
+  draftSubclasses.push(name);
+  $("savedSubcategory").value = "";
+  renderClassManager();
+  $("savedSubcategory").focus();
+}
+$("addSubclass").onclick = addDraftSubclass;
+$("savedSubcategory").onkeydown = (event) => {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    addDraftSubclass();
+  }
+};
+$("subclassChips").onclick = (event) => {
+  const b = (event.target as Element).closest<HTMLElement>(
+    "[data-remove-subclass]",
+  );
+  if (b) {
+    draftSubclasses.splice(Number(b.dataset.removeSubclass), 1);
+    renderClassManager();
+  }
+};
+$("habitForm").onsubmit = (event) => {
+  event.preventDefault();
+  if (saveHabitName($("habitName").value)) $("habitForm").reset();
+};
+$("classificationForm").onsubmit = (event) => {
+  event.preventDefault();
+  const category = $("savedCategory").value.trim();
+  if (!category) return toast("Escribe una clase.");
+  if ($("savedSubcategory").value.trim()) addDraftSubclass();
+  if (storageError)
+    return toast("No se pueden guardar cambios hasta recuperar los datos.");
+  const key = habitKey(category);
+  const previous = classCatalog[key]?.subclasses || [];
+  const subclasses = [
+    ...new Map(
+      [...previous, ...draftSubclasses].map((s) => [habitKey(s), s]),
+    ).values(),
+  ];
+  const next = { ...classCatalog, [key]: { name: category, subclasses } };
+  try {
+    localStorage.setItem(CATALOG_KEY, JSON.stringify(next));
+    classCatalog = next;
+    $("classificationForm").reset();
+    draftSubclasses = [];
+    renderClassManager();
+    renderClassOptions();
+    toast("Clasificación guardada");
+  } catch {
+    toast("No se pudo guardar la clasificación.");
+  }
+};
+$("toggleSavedNames").onclick = () => {
+  const open = $("savedHabits").hidden;
+  $("savedHabits").hidden = !open;
+  $("toggleSavedNames").setAttribute("aria-expanded", String(open));
+  $("toggleSavedNames").textContent = open
+    ? "Ocultar nombres guardados ▴"
+    : "Ver nombres guardados ▾";
+};
 renderClassManager();
 
-function setEntryMode(mode:'habit'|'class'){entryMode=mode;const isClass=mode==='class';$('entryClassification').hidden=!isClass;$('entryHabitPicker').hidden=isClass;$('habit').required=!isClass;$('habit').disabled=isClass;$('category').required=isClass;$('category').disabled=!isClass;$('subcategory').disabled=!isClass;$('modeHabit').setAttribute('aria-pressed',String(!isClass));$('modeClass').setAttribute('aria-pressed',String(isClass));if(isClass)setHabitList(false);renderClassOptions()}
-$('modeHabit').onclick=()=>{setEntryMode('habit');$('habit').focus()};$('modeClass').onclick=()=>{setEntryMode('class');$('category').focus()};setEntryMode('habit');
+function setEntryMode(mode: "habit" | "class") {
+  entryMode = mode;
+  const isClass = mode === "class";
+  $("entryClassification").hidden = !isClass;
+  $("entryHabitPicker").hidden = isClass;
+  $("habit").required = !isClass;
+  $("habit").disabled = isClass;
+  $("category").required = isClass;
+  $("category").disabled = !isClass;
+  $("subcategory").disabled = !isClass;
+  $("modeHabit").setAttribute("aria-pressed", String(!isClass));
+  $("modeClass").setAttribute("aria-pressed", String(isClass));
+  if (isClass) setHabitList(false);
+  renderClassOptions();
+}
+$("modeHabit").onclick = () => {
+  setEntryMode("habit");
+  $("habit").focus();
+};
+$("modeClass").onclick = () => {
+  setEntryMode("class");
+  $("category").focus();
+};
+setEntryMode("habit");
 
-function showDetails(entry:Entry){detailId=entry.id||null;$('detailsTitle').textContent=entry.habit;$('detailsContent').innerHTML=recordCard(entry)+(!entry.description&&!entry.comment?'<p class="form-note">Sin descripción ni comentario.</p>':'');$('recordDetails').showModal()}
-$('closeDetails').onclick=()=>{$('recordDetails').close()};$('editDetails').onclick=()=>{const entry=entries.find(e=>e.id===detailId);if(entry){$('recordDetails').close();openForm(entry)}};$('deleteDetails').onclick=()=>{const entry=entries.find(e=>e.id===detailId);if(entry&&confirm(`¿Eliminar el registro de «${entry.habit}»?`)&&commit(entries.filter(e=>e.id!==detailId))){$('recordDetails').close();detailId=null;toast('Registro eliminado')}};
-$('recordDetails').addEventListener('click',event=>{if(event.target!==$('recordDetails'))return;const r=$('recordDetails').getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)$('recordDetails').close()});
+function showDetails(entry: Entry) {
+  detailId = entry.id || null;
+  $("detailsTitle").textContent = entry.habit;
+  $("detailsContent").innerHTML =
+    recordCard(entry) +
+    (!entry.description && !entry.comment
+      ? '<p class="form-note">Sin descripción ni comentario.</p>'
+      : "");
+  $("recordDetails").showModal();
+}
+$("closeDetails").onclick = () => {
+  $("recordDetails").close();
+};
+$("editDetails").onclick = () => {
+  const entry = entries.find((e) => e.id === detailId);
+  if (entry) {
+    $("recordDetails").close();
+    openForm(entry);
+  }
+};
+$("deleteDetails").onclick = () => {
+  const entry = entries.find((e) => e.id === detailId);
+  if (
+    entry &&
+    confirm(`¿Eliminar el registro de «${entry.habit}»?`) &&
+    commit(entries.filter((e) => e.id !== detailId))
+  ) {
+    $("recordDetails").close();
+    detailId = null;
+    toast("Registro eliminado");
+  }
+};
+$("recordDetails").addEventListener("click", (event) => {
+  if (event.target !== $("recordDetails")) return;
+  const r = $("recordDetails").getBoundingClientRect();
+  if (
+    event.clientX < r.left ||
+    event.clientX > r.right ||
+    event.clientY < r.top ||
+    event.clientY > r.bottom
+  )
+    $("recordDetails").close();
+});
 
-import './tracker.js';
+import "./tracker.js";

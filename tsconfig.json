@@ -3,19 +3,13 @@
     "target": "ES2022",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "lib": [
-      "ES2022",
-      "DOM",
-      "DOM.Iterable"
-    ],
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "outDir": "build",
     "rootDir": ".",
     "strictNullChecks": true,
     "skipLibCheck": true,
     "sourceMap": true,
-    "types": [
-      "node"
-    ],
+    "types": ["node"],
     "strict": true
   },
   "include": [
