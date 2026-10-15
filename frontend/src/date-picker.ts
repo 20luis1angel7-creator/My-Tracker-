@@ -21,7 +21,7 @@ export function syncDateFields() {
           year: "numeric",
           hour: "2-digit",
           minute: "2-digit",
-          hourCycle: "h23",
+          hour12: true,
         }).format(new Date(value))
       : id === "endedAt"
         ? "Sin fecha final"
@@ -48,8 +48,9 @@ function renderCalendar() {
   element("dateDays").innerHTML = html;
 }
 function syncTime() {
-  field("dateHour").value = pad(selected.getHours());
+  field("dateHour").value = pad(selected.getHours() % 12 || 12);
   field("dateMinute").value = pad(selected.getMinutes());
+  field("datePeriod").value = selected.getHours() >= 12 ? "PM" : "AM";
 }
 function openPicker(id: typeof target) {
   target = id;
@@ -68,12 +69,15 @@ function openPicker(id: typeof target) {
   dialog.showModal();
 }
 for (const [id, count] of [
-  ["dateHour", 24],
+  ["dateHour", 12],
   ["dateMinute", 60],
 ] as const) {
   field(id).innerHTML = Array.from(
     { length: count },
-    (_, i) => `<option value="${pad(i)}">${pad(i)}</option>`,
+    (_, i) => {
+      const value = pad(id === "dateHour" ? i + 1 : i);
+      return `<option value="${value}">${value}</option>`;
+    },
   ).join("");
 }
 element("pickStart").onclick = () => openPicker("occurredAt");
@@ -108,7 +112,8 @@ element("clearEndDate").onclick = () => {
   dialog.close();
 };
 element("applyDate").onclick = () => {
-  const value = `${dateKey(selected)}T${field("dateHour").value}:${field("dateMinute").value}`;
+  const hour = Number(field("dateHour").value) % 12 + (field("datePeriod").value === "PM" ? 12 : 0);
+  const value = `${dateKey(selected)}T${pad(hour)}:${field("dateMinute").value}`;
   const start = field("occurredAt").value,
     end = field("endedAt").value;
   const error =
