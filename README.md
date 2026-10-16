@@ -31,18 +31,113 @@ package-lock.json
 tsconfig.json             TypeScript en modo estricto
 ```
 
-## Ejecutar
+## Inicialización completa
 
-Requiere Node.js 20 o superior.
+Requisitos: Node.js 22 o superior, npm, Docker y Docker Compose. Docker debe estar iniciado. Ejecuta los comandos desde la carpeta `ritmo`.
+
+### Primera vez
 
 ```bash
+cd "/home-data/luis/Escritorio/app tracker/ritmo"
 npm ci
-npm run typecheck
-npm test
+```
+
+Crear `.env` solamente si todavía no existe (no sobrescribe tu configuración):
+
+```bash
+if [ ! -f .env ]; then
+  cp .env.example .env
+fi
+```
+
+Iniciar PostgreSQL y esperar a que esté listo:
+
+```bash
+docker compose up -d --wait postgres
+```
+
+Iniciar la aplicación:
+
+```bash
 npm start
 ```
 
-Abre http://localhost:8080. `npm run build` compila TypeScript y genera `dist/`. `npm start` ejecuta el backend y sirve el frontend. `PORT` permite cambiar el puerto. Edita los archivos fuente, no `build/` ni `dist/`.
+`npm start` compila automáticamente TypeScript mediante `prestart` y después inicia el backend, que también sirve el frontend. No necesitas abrir otro servidor para el frontend. El arranque crea las tablas necesarias y la cuenta de prueba si todavía no existe.
+
+Abre **http://localhost:8080** e inicia sesión con:
+
+- Usuario: `admin`
+- Contraseña de prueba: `123456`
+
+Para importar tus datos anteriores, usa el mismo navegador y la misma dirección donde los tenías. La importación ocurre al entrar como admin y conserva la copia original.
+
+### Cada vez que vuelvas a trabajar
+
+```bash
+cd "/home-data/luis/Escritorio/app tracker/ritmo"
+docker compose up -d --wait postgres
+npm start
+```
+
+Si cambiaste código mientras el servidor estaba abierto, detenlo con **Ctrl+C** y ejecuta de nuevo `npm start`. Recarga la página después. Si cambian las dependencias o acabas de descargar el proyecto, ejecuta `npm ci` antes de arrancar.
+
+### Detener y volver a iniciar
+
+En la terminal del servidor pulsa **Ctrl+C**. Después puedes detener PostgreSQL sin borrar sus datos:
+
+```bash
+docker compose stop postgres
+```
+
+Para volver a iniciar todo:
+
+```bash
+docker compose up -d --wait postgres
+npm start
+```
+
+No uses `docker compose down -v`: elimina el volumen donde se guardan los datos.
+
+### Comprobar PostgreSQL
+
+```bash
+docker compose ps
+docker compose exec postgres pg_isready -U ritmo -d ritmo
+docker compose logs --tail=50 postgres
+```
+
+Abrir la consola SQL:
+
+```bash
+docker compose exec postgres psql -U ritmo -d ritmo
+```
+
+Para salir de la consola SQL escribe `\q`.
+
+La conexión local usa el puerto **55432**; dentro del contenedor PostgreSQL escucha en **5432**. `DATABASE_URL` está configurado en `.env`, que no se guarda en Git.
+
+### Comandos de desarrollo
+
+```bash
+npm run typecheck  # Comprobar tipos sin generar archivos
+npm run build      # Compilar y generar build/ y dist/
+npm test           # Compilar y ejecutar las pruebas
+npm start          # Compilar y arrancar frontend + backend
+```
+
+Edita `frontend/`, `backend/` y `shared/`; `build/` y `dist/` son archivos generados.
+
+### Si el puerto de la aplicación está ocupado
+
+Cierra la instancia anterior con **Ctrl+C**. Si la suspendiste con **Ctrl+Z**, ejecuta `fg` en esa misma terminal y luego pulsa **Ctrl+C**.
+
+Para arrancar en otro puerto:
+
+```bash
+PORT=8081 npm start
+```
+
+En ese caso abre http://localhost:8081. Recuerda que los datos antiguos del navegador se asocian a su dirección original: usa el puerto anterior para importarlos.
 
 ## Backend
 
@@ -56,7 +151,7 @@ El backend se ejecuta en local con `npm start`. La publicación anterior en Site
 
 La interfaz conserva las claves existentes de localStorage y los registros del navegador. Crear una recaída permite elegir hábito o clase. Inicio obligatorio, final opcional. El calendario muestra cada registro una sola vez en su día inicial, con ambas fechas en el detalle. La gráfica calcula la duración entre inicio y final una vez por registro; los registros abiertos no aportan tiempo y sí aportan su cantidad. Los intervalos superpuestos se suman.
 
-Mis hábitos separa el guardado de nombres del guardado de clases con múltiples subclases. Los nombres se muestran al abrir el desplegable. Los datos se exportan en JSON y no se sincronizan entre dispositivos.
+Mis hábitos separa el guardado de nombres del guardado de clases con múltiples subclases. Los nombres se muestran al abrir el desplegable. Los datos se exportan en JSON y se guardan por usuario en PostgreSQL.
 
 ## Verificación de interfaz
 
@@ -75,13 +170,7 @@ El menú Tracker aparece debajo de Calendario. Permite crear hábitos diarios, d
 
 La aplicación local ahora requiere PostgreSQL. Los cambios permanecen sin commit, sin push y sin publicación. La web de Sites anterior no se actualiza con esta integración.
 
-```bash
-npm install
-docker compose up -d postgres
-# Si aún no existe .env: copia .env.example a .env
-npm run build
-npm start
-```
+Consulta «Inicialización completa» al principio de este documento para los comandos de arranque.
 
 `DATABASE_URL` está en `.env` (ignorado por Git). El contenedor usa un volumen persistente llamado `ritmo_postgres`. El inicio crea las tablas y, solo si no existe, la cuenta `admin` con la contraseña `123456`. Cambiar `ADMIN_PASSWORD` no restablece usuarios existentes. No uses `docker compose down -v` si quieres conservar los datos.
 
