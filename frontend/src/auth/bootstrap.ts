@@ -68,11 +68,10 @@ get("authSwitch").onclick = () => {
     button.disabled = false;
   }
 };
-get("accountSync").onclick = () => void flushAccount();
 get("logoutButton").onclick = async () => {
   if (!(await flushAccount())) {
     alert(
-      "Hay cambios pendientes. Comprueba la conexión y pulsa Reintentar antes de cerrar sesión.",
+      "Hay cambios pendientes. Comprueba la conexión; se guardarán automáticamente antes de cerrar sesión.",
     );
     return;
   }

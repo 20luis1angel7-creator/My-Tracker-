@@ -11,11 +11,14 @@ let active = false,
   lastError = false;
 const isAccountKey = (key: string): key is AccountKey =>
   ACCOUNT_KEYS.includes(key as AccountKey);
+let retryTimer: number | undefined;
+let retryDelay = 5000;
+
 function status(message: string, error = false) {
-  const node = document.getElementById("accountSync");
+  const node = document.getElementById("accountSaveNotice");
   if (node) {
     node.textContent = message;
-    node.classList.toggle("sync-error", error);
+    node.hidden = !error;
   }
 }
 function backup() {
@@ -40,12 +43,24 @@ function enqueue(key: AccountKey, value: string) {
       if (pending[key] === value) delete pending[key];
       backup();
       lastError = false;
+      retryDelay = 5000;
+      if (!Object.keys(pending).length && retryTimer !== undefined) {
+        window.clearTimeout(retryTimer);
+        retryTimer = undefined;
+      }
       status(
         Object.keys(pending).length ? "Guardando…" : "Guardado en PostgreSQL",
       );
     } catch {
       lastError = true;
-      status("Pendiente de guardar · pulsa Reintentar", true);
+      status("Hay cambios pendientes. Se guardarán automáticamente cuando vuelva la conexión.", true);
+      if (retryTimer === undefined) {
+        retryTimer = window.setTimeout(() => {
+          retryTimer = undefined;
+          void flushAccount();
+        }, retryDelay);
+        retryDelay = Math.min(retryDelay * 2, 60000);
+      }
     }
   });
 }
@@ -63,7 +78,7 @@ export async function activateAccount(id: string, data: AccountData) {
   await queue;
   status(
     lastError
-      ? "Pendiente de guardar · pulsa Reintentar"
+      ? "Hay cambios pendientes. Se guardarán automáticamente cuando vuelva la conexión."
       : "Guardado en PostgreSQL",
     lastError,
   );
@@ -109,4 +124,8 @@ window.addEventListener("beforeunload", (e) => {
     e.preventDefault();
     e.returnValue = "";
   }
+});
+
+window.addEventListener("online", () => {
+  if (active && Object.keys(pending).length) void flushAccount();
 });

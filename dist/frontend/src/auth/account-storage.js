@@ -1,11 +1,13 @@
 import { ACCOUNT_KEYS, } from "../../../shared/account-data.js";
 let active = false, userId = "", values = {}, pending = {}, queue = Promise.resolve(), lastError = false;
 const isAccountKey = (key) => ACCOUNT_KEYS.includes(key);
+let retryTimer;
+let retryDelay = 5000;
 function status(message, error = false) {
-    const node = document.getElementById("accountSync");
+    const node = document.getElementById("accountSaveNotice");
     if (node) {
         node.textContent = message;
-        node.classList.toggle("sync-error", error);
+        node.hidden = !error;
     }
 }
 function backup() {
@@ -26,11 +28,23 @@ function enqueue(key, value) {
                 delete pending[key];
             backup();
             lastError = false;
+            retryDelay = 5000;
+            if (!Object.keys(pending).length && retryTimer !== undefined) {
+                window.clearTimeout(retryTimer);
+                retryTimer = undefined;
+            }
             status(Object.keys(pending).length ? "Guardando…" : "Guardado en PostgreSQL");
         }
         catch {
             lastError = true;
-            status("Pendiente de guardar · pulsa Reintentar", true);
+            status("Hay cambios pendientes. Se guardarán automáticamente cuando vuelva la conexión.", true);
+            if (retryTimer === undefined) {
+                retryTimer = window.setTimeout(() => {
+                    retryTimer = undefined;
+                    void flushAccount();
+                }, retryDelay);
+                retryDelay = Math.min(retryDelay * 2, 60000);
+            }
         }
     });
 }
@@ -45,7 +59,7 @@ export async function activateAccount(id, data) {
         enqueue(key, value);
     await queue;
     status(lastError
-        ? "Pendiente de guardar · pulsa Reintentar"
+        ? "Hay cambios pendientes. Se guardarán automáticamente cuando vuelva la conexión."
         : "Guardado en PostgreSQL", lastError);
 }
 export async function flushAccount() {
@@ -89,5 +103,9 @@ window.addEventListener("beforeunload", (e) => {
         e.preventDefault();
         e.returnValue = "";
     }
+});
+window.addEventListener("online", () => {
+    if (active && Object.keys(pending).length)
+        void flushAccount();
 });
 //# sourceMappingURL=account-storage.js.map

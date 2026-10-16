@@ -20,13 +20,12 @@
 -hacer esta aplicacion por fase
 +que no haga un commit y hace push automáticamente
 +comando en md
-
++que te explique el boton de guardado en postgresql
 
 
 ui: 
 -cambiar el boton de salir y poner el icono de salir y ponerlo en la derecha
 -boton de mode dark y white poner solo un icono
--que te explique el boton de guardado en postgresql
 -boton registrar recaida solo diga + y que este flotando en la esquina derecha abajo
 -quitar boton >> en el menu y poner que darle click al loho o icono se cierre y se abra el enu
 -cuando haga click al icono de ritmo abre y cierre el menu

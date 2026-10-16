@@ -178,7 +178,7 @@ Al entrar como admin desde el mismo navegador y la misma dirección donde estaba
 
 Si antes usabas localhost:8080, vuelve a entrar en esa misma dirección: localhost, 127.0.0.1, distintos puertos y Sites son orígenes separados y no comparten localStorage. La aplicación no puede leer los datos de otro origen. La migración real se completa cuando abres la app e inicias sesión como admin; el asistente no puede leer el localStorage de tu navegador desde los archivos del proyecto.
 
-Los cambios se sincronizan con PostgreSQL y el estado aparece en la cabecera. Una copia por usuario y una cola de operaciones pendientes se conservan en el navegador para recuperarse de cortes de conexión. Pulsa el indicador para reintentar; cerrar sesión espera a que no queden cambios pendientes.
+Los cambios se guardan automáticamente en PostgreSQL, sin botón de guardado. Una copia por usuario y una cola de operaciones pendientes se conservan en el navegador. Si falla la conexión aparece un aviso y se reintenta automáticamente, con pausas de 5 a 60 segundos y al volver a estar en línea. Cerrar sesión espera a que no queden cambios pendientes.
 
 Las contraseñas se guardan con scrypt y sal aleatoria. Las sesiones usan cookies HttpOnly, SameSite=Strict y tokens almacenados como hash. Para un despliegue HTTPS configura `COOKIE_SECURE=true`. Estos datos no se guardan en el repositorio.
 
