@@ -100,7 +100,12 @@ try {
 catch { }
 function applyTheme() {
     document.documentElement.dataset.theme = dark ? "dark" : "light";
-    $("themeToggle").textContent = dark ? "☀ Modo claro" : "☾ Modo oscuro";
+    const label = dark ? "Activar modo claro" : "Activar modo oscuro";
+    $("themeToggle").setAttribute("aria-label", label);
+    $("themeToggle").title = label;
+    $("themeToggle").innerHTML = dark
+        ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg>'
+        : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M20.9 13a9 9 0 0 1-9.9-9.9A9 9 0 1 0 20.9 13Z"/></svg>';
     $("themeToggle").setAttribute("aria-pressed", String(dark));
 }
 applyTheme();
@@ -541,12 +546,6 @@ try {
 catch { }
 function applyMenu() {
     document.body.classList.toggle("menu-collapsed", collapsed);
-    $("sidebarToggle").textContent = window.matchMedia("(max-width:760px)")
-        .matches
-        ? "×"
-        : collapsed
-            ? "»"
-            : "«";
     $("sidebarToggle").setAttribute("aria-expanded", String(!collapsed));
     $("sidebarToggle").setAttribute("aria-label", collapsed ? "Expandir menú" : "Contraer menú");
 }
@@ -622,7 +621,6 @@ function setMobileMenu(open) {
     $("mobileLogo").setAttribute("aria-label", mobileOpen ? "Cerrar menú" : "Abrir menú");
     $("sidebar").inert = mobileMedia.matches && !mobileOpen;
     if (mobileMedia.matches) {
-        $("sidebarToggle").textContent = "×";
         $("sidebarToggle").setAttribute("aria-label", "Cerrar menú");
     }
     else

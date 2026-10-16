@@ -38,6 +38,7 @@ async function enter(user: { id: string; username: string }) {
   } else data = (await api("/api/data")).data;
   await activateAccount(user.id, data);
   get("accountUser").textContent = user.username;
+  get("accountAvatar").textContent = user.username.slice(0, 1).toUpperCase();
   await import("../app.js");
   get("authView").hidden = true;
   document.body.classList.remove("auth-pending");

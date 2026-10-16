@@ -51,16 +51,7 @@
       hidden
     ></button>
     <aside id="sidebar" class="sidebar">
-      <a href="./" class="brand"
-        ><span>r.</span><b class="brand-name">ritmo</b></a
-      ><button
-        id="sidebarToggle"
-        class="secondary sidebar-toggle"
-        aria-label="Contraer menú"
-        aria-expanded="true"
-      >
-        «
-      </button>
+      <button id="sidebarToggle" type="button" class="brand menu-logo" aria-label="Contraer menú" aria-controls="sidebar" aria-expanded="true"><span aria-hidden="true">r.</span><b class="brand-name">ritmo</b></button>
       <p class="menu-label">MI ESPACIO</p>
       <nav aria-label="Menú principal">
         <a
@@ -103,7 +94,7 @@
           ><b class="nav-text">Estadísticas</b></a
         >
       </nav>
-      <p class="sidebar-note">Un paso a la vez.</p>
+      <div class="sidebar-profile"><span id="accountAvatar" class="profile-avatar" aria-hidden="true">U</span><div class="profile-details"><span id="accountUser">Mi cuenta</span><small>Perfil</small></div></div>
     </aside>
     <div class="app-shell">
       <header>
@@ -117,14 +108,9 @@
           <span>r.</span></button
         ><span id="pageTitle" class="page-title">Historial</span>
         <div class="header-actions">
-          <span id="accountUser"></span>
-          <button id="logoutButton" type="button" class="secondary">
-            Salir
-          </button>
-          <span class="privacy">● Cuenta personal</span
-          ><button id="themeToggle" class="secondary" aria-pressed="false">
-            ☾ Modo oscuro
-          </button>
+          <span class="privacy">● Cuenta personal</span>
+          <button id="themeToggle" type="button" class="secondary header-icon" aria-label="Activar modo oscuro" title="Activar modo oscuro" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M20.9 13a9 9 0 0 1-9.9-9.9A9 9 0 1 0 20.9 13Z"/></svg></button>
+          <button id="logoutButton" type="button" class="secondary header-icon" aria-label="Cerrar sesión" title="Cerrar sesión"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h4M14 8l4 4-4 4M8 12h12"/></svg></button>
         </div>
       </header>
       <main>
@@ -137,7 +123,7 @@
               Registra lo que pasó, reflexiona y sigue a tu ritmo.
             </p>
           </div>
-          <button class="primary" id="newEntry">＋ Registrar recaída</button>
+          <button class="primary floating-entry" id="newEntry" type="button" aria-label="Registrar recaída" title="Registrar recaída"><span aria-hidden="true">+</span></button>
         </section>
         <section id="habitsView" class="content habit-section" hidden>
           <div class="heading">
