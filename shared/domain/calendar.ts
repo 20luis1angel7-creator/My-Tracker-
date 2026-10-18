@@ -7,6 +7,8 @@ export function eventsForDay(day: string, entries: Entry[]): CalendarEvent[] {
     .filter((e) => e.occurredAt.slice(0, 10) === day)
     .map((e) => ({
       id: e.id,
+      type: e.type,
+      durationMinutes: e.durationMinutes,
       name: e.habit,
       category: e.category,
       subcategory: e.subcategory,

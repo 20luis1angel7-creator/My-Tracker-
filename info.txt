@@ -1,16 +1,15 @@
 
 
--hacer que el boton flote y e mantenga siempre en el fondoabajo a la derecha +
 -hacer que el exportar se descargue en excel o pdf y no en json, poner un icono de descarga
 -poder agregar habitos, cosas que hago por primera vez o no pero para que vea que puedo hacer muchas cosas
 -buscar una UI mejor
--poder registrar apps en el grafico con escaneo
+-poder un apartado para registrar apps
 -investigar preguntas
 -que en la grafica pueda filtrar
 -mejorar el backend
 -los datos se guarden y lean en excel
 -hacer esta aplicacion por fase
-
+-quitar las palabras donde dice recaida y cambiarla por habitos u otra cosa
 
 
 REALIZADOS +

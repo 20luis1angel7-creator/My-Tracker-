@@ -449,6 +449,12 @@
           >
             Registrar clase
           </button>
+          <button type="button" id="modeApp" class="secondary" aria-pressed="false">Apps del celular</button>
+        </div>
+        <div id="entryAppPicker" class="app-picker" hidden>
+          <label for="mobileApp">App del celular</label>
+          <input id="mobileApp" list="mobileAppOptions" maxlength="80" placeholder="Ej.: Instagram, WhatsApp, TikTok" disabled>
+          <datalist id="mobileAppOptions"></datalist>
         </div>
         <div id="entryClassification" class="form-grid classification" hidden>
           <label
@@ -498,7 +504,18 @@
             <p class="habit-empty">Todavía no tienes hábitos guardados.</p>
           </div>
         </div>
-        <div class="form-grid entry-dates">
+        <div id="appDateTimeRow" class="app-date-time-row" hidden>
+        <div id="appUsageDateField" class="date-field" hidden>
+          <label for="pickAppDate">Fecha de uso</label>
+          <input id="appUsageDate" type="hidden">
+          <button id="pickAppDate" type="button" class="date-field-button" aria-haspopup="dialog">
+            <span aria-hidden="true">▦</span>
+            <span id="appDateText">Seleccionar fecha</span>
+            <span aria-hidden="true">⌄</span>
+          </button>
+        </div>
+        </div>
+        <div id="entryDates" class="form-grid entry-dates">
           <div class="date-field">
             <label for="pickStart">Fecha de inicio</label
             ><input id="occurredAt" type="hidden" /><button
@@ -593,7 +610,7 @@
         ><span>S</span><span>D</span>
       </div>
       <div id="dateDays" class="date-picker-days"></div>
-      <div class="date-picker-time">
+      <div id="datePickerTime" class="date-picker-time">
         <label for="dateHour"
           >Hora <span class="optional-label">12 h</span></label
         >
@@ -607,6 +624,15 @@
           ><button id="dateNow" type="button" class="secondary">Ahora</button>
         </div>
       </div>
+        <div id="appDurationField" class="app-picker" hidden>
+          <label>Tiempo consumido</label>
+          <div class="app-duration-selectors">
+            <label for="appHours">Horas<select id="appHours" required disabled></select></label>
+            <span class="duration-colon" aria-hidden="true">:</span>
+            <label for="appMinutes">Minutos<select id="appMinutes" required disabled></select></label>
+          </div>
+        </div>
+
       <p id="datePickerError" class="date-picker-error" role="status"></p>
       <div class="dialog-actions">
         <button id="clearEndDate" type="button" class="secondary">

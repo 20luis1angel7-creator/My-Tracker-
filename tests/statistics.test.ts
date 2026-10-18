@@ -52,3 +52,9 @@ test("Períodos mensuales respetan febrero bisiesto y el año agrupa por mes", a
   assert.equal(months[9].value, 4);
   assert.equal(months[8].value, 0);
 });
+test("Apps suman horas directas y conservan la duración de registros antiguos", () => {
+  const app = { ...entries[0], type: "app" as const, endedAt: "", durationMinutes: 90 };
+  assert.equal(durationMinutes(app), 90);
+  assert.equal(breakdown([app], "time")[0].value, 90);
+  assert.equal(durationMinutes({ ...entries[0], type: "app" }), 90);
+});

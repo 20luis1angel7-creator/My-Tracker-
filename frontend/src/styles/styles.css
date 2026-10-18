@@ -2127,3 +2127,77 @@ main { padding-bottom: 84px; }
   .sidebar .menu-logo { margin-bottom: 0; }
   .intro #newEntry { width: 54px; height: 54px; min-height: 54px; right: 20px; bottom: calc(20px + env(safe-area-inset-bottom)); }
 }
+.app-picker { margin: 16px 0; }
+.app-picker > label { margin: 0 0 8px; }
+.app-picker > input { width: 100%; margin: 0; }
+@media (max-width: 480px) {
+  .entry-mode { gap: 5px; }
+  .entry-mode button { white-space: normal; padding: 9px 6px; font-size: 10px; }
+}
+.app-duration-selectors {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  width: fit-content;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--bg);
+}
+.app-duration-selectors > label {
+  margin: 0;
+  font-size: 11px;
+  color: var(--muted);
+}
+.app-duration-selectors select {
+  width: 66px;
+  margin-top: 5px;
+  padding: 7px 9px;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  background: var(--surface);
+}
+.duration-colon {
+  align-self: flex-end;
+  padding-bottom: 6px;
+  font-size: 16px;
+  color: var(--muted);
+}
+.app-date-time-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 12px;
+  margin: 16px 0;
+}
+.app-date-time-row > div {
+  min-width: 0;
+  margin: 0;
+}
+.app-date-time-row .date-field > label {
+  margin: 0 0 8px;
+}
+.app-date-time-row .date-field-button {
+  min-height: 38px;
+  padding: 8px 12px;
+}
+@media (max-width: 480px) {
+  .app-date-time-row { gap: 8px; }
+  .app-date-time-row .app-duration-selectors { padding: 8px; gap: 5px; }
+  .app-date-time-row select { width: 54px; padding: 7px 4px; }
+  .app-date-time-row .date-field-button { padding: 8px; gap: 5px; min-height: 38px; }
+}
+.app-date-time-row {
+  grid-template-columns: minmax(0, 1fr);
+}
+.date-picker #appDurationField {
+  margin: 18px 0 0;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+.date-picker .app-duration-selectors {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}

@@ -1,5 +1,9 @@
 import { dateKey } from "./calendar.js";
 export function durationMinutes(entry) {
+    if (entry.type === "app" && entry.durationMinutes !== undefined) {
+        return Number.isFinite(entry.durationMinutes) && entry.durationMinutes > 0
+            ? entry.durationMinutes : 0;
+    }
     if (!entry.endedAt)
         return 0;
     return Math.max(0, (new Date(entry.endedAt).getTime() -

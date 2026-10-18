@@ -1,6 +1,6 @@
 import { accountStorage } from "./auth/account-storage.js";
 import { syncDateFields } from "./date-picker.js";
-import { formatDuration, weekStart, periodData, breakdown, } from "./lib/statistics.js";
+import { durationMinutes, formatDuration, weekStart, periodData, breakdown, } from "./lib/statistics.js";
 import { dateKey, eventsForDay } from "./lib/calendar.js";
 import { STORAGE_KEY, habitKey, validateEntry, filterEntries, loadEntries, } from "./lib/model.js";
 const $ = (id) => {
@@ -149,7 +149,11 @@ function recordCard(e, editable = false) {
       </h3>
       <span class="badge">${e.count} ${e.count === 1 ? "vez" : "veces"}</span>
     </div>
-    <div class="record-meta">
+    ${e.type === "app" ? /* HTML */ `
+      <div class="record-meta">
+        <div><span>Registrado</span><time datetime="${esc(e.occurredAt)}">${format(e.occurredAt)}</time></div>
+        <div><span>Tiempo consumido</span><span class="record-value">${formatDuration(durationMinutes({ ...e, habit: name }))}</span></div>
+      </div>` : /* HTML */ `    <div class="record-meta">
       <div>
         <span>Inicio</span
         ><time datetime="${esc(e.occurredAt)}">${format(e.occurredAt)}</time>
@@ -159,6 +163,7 @@ function recordCard(e, editable = false) {
         >${e.endedAt ? /* HTML */ `<time datetime="${esc(e.endedAt)}">${format(e.endedAt)}</time>` : '<span class="record-value">Sin fecha final</span>'}
       </div>
     </div>
+`}
     ${!editable && (e.description || e.comment)
         ? /* HTML */ `<div class="record-notes">
             ${e.description
@@ -276,13 +281,21 @@ function openForm(entry, habit) {
     }
     setHabitList(false);
     updateSaveHabit();
+    $("appUsageDate").value = entry?.type === "app"
+        ? entry.occurredAt.slice(0, 10) : dateKey(new Date());
     syncDateFields();
     $("entryDialog").showModal();
-    setEntryMode(entry?.type === "class" || (!entry?.type && entry?.category)
-        ? "class"
-        : "habit");
+    $("mobileApp").value = entry?.type === "app" ? entry.habit : "";
+    setAppDuration(entry?.type === "app" ? durationMinutes(entry) : 0);
+    setEntryMode(entry?.type === "app"
+        ? "app"
+        : entry?.type === "class" || (!entry?.type && entry?.category)
+            ? "class"
+            : "habit");
     renderClassOptions(entry?.subcategory);
-    $(entryMode === "class" ? "category" : "habit").focus();
+    $(entryMode === "app"
+        ? "mobileApp"
+        : entryMode === "class" ? "category" : "habit").focus();
 }
 $("newEntry").onclick = () => openForm();
 for (const id of ["close", "cancel"])
@@ -292,13 +305,23 @@ $("entryForm").onsubmit = (event) => {
     const entry = {
         id: editing || crypto.randomUUID(),
         type: entryMode,
-        habit: entryMode === "class"
-            ? $("subcategory").value.trim() || $("category").value.trim()
-            : $("habit").value.trim(),
-        category: entryMode === "class" ? $("category").value.trim() : "",
-        subcategory: entryMode === "class" ? $("subcategory").value.trim() : "",
-        occurredAt: $("occurredAt").value,
-        endedAt: $("endedAt").value,
+        habit: entryMode === "app"
+            ? $("mobileApp").value.trim()
+            : entryMode === "class"
+                ? $("subcategory").value.trim() || $("category").value.trim()
+                : $("habit").value.trim(),
+        category: entryMode === "app"
+            ? "Apps"
+            : entryMode === "class" ? $("category").value.trim() : "",
+        subcategory: entryMode === "app"
+            ? $("mobileApp").value.trim()
+            : entryMode === "class" ? $("subcategory").value.trim() : "",
+        occurredAt: entryMode === "app"
+            ? `${$("appUsageDate").value}T00:00`
+            : $("occurredAt").value,
+        endedAt: entryMode === "app" ? "" : $("endedAt").value,
+        ...(entryMode === "app"
+            ? { durationMinutes: Number($("appHours").value) * 60 + Number($("appMinutes").value) } : {}),
         count: editing ? (entries.find((e) => e.id === editing)?.count ?? 1) : 1,
         description: $("description").value.trim(),
         comment: $("comment").value.trim(),
@@ -794,10 +817,10 @@ function renderStatistics() {
     $("prevWeek").setAttribute("aria-label", "Período anterior");
     $("nextWeek").setAttribute("aria-label", "Período siguiente");
     $("activityChart").classList.toggle("monthly-chart", period === "month");
-    const missing = selected.records.filter((e) => !e.endedAt).length;
+    const missing = selected.records.filter((e) => e.type !== "app" && !e.endedAt).length;
     $("statsNote").textContent =
         metric === "time"
-            ? `El tiempo se calcula entre inicio y final y se asigna al día de inicio.${missing ? ` ${missing} registros sin fecha final no aportan tiempo.` : ""}`
+            ? `En apps se suma el tiempo consumido; en otros registros se calcula entre inicio y final.${missing ? ` ${missing} registros sin fecha final no aportan tiempo.` : ""}`
             : "La gráfica suma las veces indicadas en cada registro, según su fecha de inicio.";
     const rows = breakdown(selected.records, metric);
     $("statsBreakdown").innerHTML = rows.length
@@ -930,19 +953,54 @@ $("toggleSavedNames").onclick = () => {
         : "Ver nombres guardados ▾";
 };
 renderClassManager();
+function setAppDuration(totalMinutes) {
+    const total = Math.max(0, Math.round(totalMinutes));
+    const hours = Math.floor(total / 60);
+    const hourValues = Array.from({ length: 25 }, (_, index) => index);
+    if (hours > 24)
+        hourValues.push(hours);
+    const option = (value) => `<option value="${value}">${String(value).padStart(2, "0")}</option>`;
+    $("appHours").innerHTML = hourValues.map(option).join("");
+    $("appMinutes").innerHTML = Array.from({ length: 60 }, (_, index) => option(index)).join("");
+    $("appHours").value = String(hours);
+    $("appMinutes").value = String(total % 60);
+}
 function setEntryMode(mode) {
     entryMode = mode;
     const isClass = mode === "class";
+    $("entryDates").hidden = mode === "app";
+    $("appDurationField").hidden = mode !== "app";
+    $("appUsageDateField").hidden = mode !== "app";
+    $("appDateTimeRow").hidden = mode !== "app";
+    $("appHours").required = mode === "app";
+    $("appHours").disabled = mode !== "app";
+    $("appMinutes").required = mode === "app";
+    $("appMinutes").disabled = mode !== "app";
     $("entryClassification").hidden = !isClass;
-    $("entryHabitPicker").hidden = isClass;
-    $("habit").required = !isClass;
-    $("habit").disabled = isClass;
+    $("entryHabitPicker").hidden = mode !== "habit";
+    $("habit").required = mode === "habit";
+    $("habit").disabled = mode !== "habit";
+    $("entryAppPicker").hidden = mode !== "app";
+    $("mobileApp").required = mode === "app";
+    $("mobileApp").disabled = mode !== "app";
+    const apps = new Set([
+        "Instagram", "Facebook", "WhatsApp", "YouTube", "TikTok",
+        ...entries
+            .filter(e => e.type === "app" || habitKey(e.category || "") === "apps")
+            .map(e => e.subcategory || e.habit),
+        ...(classCatalog["apps"]?.subclasses || []),
+    ]);
+    $("mobileAppOptions").innerHTML = [...apps]
+        .sort((a, b) => a.localeCompare(b, "es"))
+        .map(name => `<option value="${esc(name)}"></option>`)
+        .join("");
     $("category").required = isClass;
     $("category").disabled = !isClass;
     $("subcategory").disabled = !isClass;
-    $("modeHabit").setAttribute("aria-pressed", String(!isClass));
+    $("modeHabit").setAttribute("aria-pressed", String(mode === "habit"));
+    $("modeApp").setAttribute("aria-pressed", String(mode === "app"));
     $("modeClass").setAttribute("aria-pressed", String(isClass));
-    if (isClass)
+    if (mode !== "habit")
         setHabitList(false);
     renderClassOptions();
 }
@@ -953,6 +1011,10 @@ $("modeHabit").onclick = () => {
 $("modeClass").onclick = () => {
     setEntryMode("class");
     $("category").focus();
+};
+$("modeApp").onclick = () => {
+    setEntryMode("app");
+    $("mobileApp").focus();
 };
 setEntryMode("habit");
 function showDetails(entry) {

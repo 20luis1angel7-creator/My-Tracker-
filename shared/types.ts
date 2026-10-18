@@ -1,11 +1,12 @@
 export interface Entry {
   id?: string;
-  type?: "habit" | "class";
+  type?: "habit" | "class" | "app";
   habit: string;
   category?: string;
   subcategory?: string;
   occurredAt: string;
   endedAt?: string;
+  durationMinutes?: number;
   count: number;
   description?: string;
   comment?: string;
@@ -20,6 +21,8 @@ export interface ClassDefinition {
   subclasses: string[];
 }
 export interface CalendarEvent {
+  type?: Entry["type"];
+  durationMinutes?: number;
   id?: string;
   name: string;
   category?: string;

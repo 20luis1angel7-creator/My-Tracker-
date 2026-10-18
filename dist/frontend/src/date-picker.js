@@ -3,6 +3,7 @@ const element = (id) => document.getElementById(id);
 const field = (id) => element(id);
 const dialog = element("datePickerDialog");
 let target = "occurredAt";
+let durationSnapshot = null;
 let selected = new Date();
 let month = new Date();
 const pad = (value) => String(value).padStart(2, "0");
@@ -10,6 +11,7 @@ export function syncDateFields() {
     for (const [id, label] of [
         ["occurredAt", "startDateText"],
         ["endedAt", "endDateText"],
+        ["appUsageDate", "appDateText"],
     ]) {
         const value = field(id).value;
         element(label).textContent = value
@@ -17,10 +19,12 @@ export function syncDateFields() {
                 day: "numeric",
                 month: "short",
                 year: "numeric",
-                hour: "2-digit",
-                minute: "2-digit",
-                hour12: true,
-            }).format(new Date(value))
+                ...(id === "appUsageDate" ? {} : {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    hour12: true,
+                }),
+            }).format(new Date(id === "appUsageDate" ? value + "T12:00:00" : value))
             : id === "endedAt"
                 ? "Sin fecha final"
                 : "Seleccionar fecha y hora";
@@ -49,12 +53,18 @@ function syncTime() {
 }
 function openPicker(id) {
     target = id;
-    selected = new Date(field(id).value ||
+    durationSnapshot = id === "appUsageDate"
+        ? { hours: field("appHours").value, minutes: field("appMinutes").value }
+        : null;
+    element("appDurationField").hidden = id !== "appUsageDate";
+    selected = new Date((id === "appUsageDate" && field(id).value
+        ? field(id).value + "T12:00:00" : field(id).value) ||
         (id === "endedAt" ? field("occurredAt").value : "") ||
         new Date());
     month = new Date(selected.getFullYear(), selected.getMonth(), 1);
     element("datePickerTitle").textContent =
-        id === "endedAt" ? "Fecha final" : "Fecha de inicio";
+        id === "appUsageDate" ? "Fecha de uso" : id === "endedAt" ? "Fecha final" : "Fecha de inicio";
+    element("datePickerTime").hidden = id === "appUsageDate";
     element("clearEndDate").hidden = id !== "endedAt";
     element("datePickerError").textContent = "";
     syncTime();
@@ -70,9 +80,22 @@ for (const [id, count] of [
         return `<option value="${value}">${value}</option>`;
     }).join("");
 }
+element("pickAppDate").onclick = () => openPicker("appUsageDate");
 element("pickStart").onclick = () => openPicker("occurredAt");
 element("pickEnd").onclick = () => openPicker("endedAt");
-element("closeDatePicker").onclick = () => dialog.close();
+function cancelDurationSelection() {
+    if (durationSnapshot) {
+        field("appHours").value = durationSnapshot.hours;
+        field("appMinutes").value = durationSnapshot.minutes;
+        durationSnapshot = null;
+    }
+}
+element("closeDatePicker").onclick = () => {
+    cancelDurationSelection();
+    dialog.close();
+};
+dialog.addEventListener("cancel", cancelDurationSelection);
+dialog.addEventListener("close", cancelDurationSelection);
 element("datePrev").onclick = () => {
     month = new Date(month.getFullYear(), month.getMonth() - 1, 1);
     renderCalendar();
@@ -101,6 +124,23 @@ element("clearEndDate").onclick = () => {
     dialog.close();
 };
 element("applyDate").onclick = () => {
+    if (target === "appUsageDate") {
+        const minutes = Number(field("appHours").value) * 60 + Number(field("appMinutes").value);
+        if (!Number.isFinite(minutes) || minutes <= 0) {
+            element("datePickerError").textContent = "Selecciona el tiempo que usaste la app.";
+            return;
+        }
+        const value = dateKey(selected);
+        if (value > dateKey(new Date())) {
+            element("datePickerError").textContent = "La fecha no puede estar en el futuro.";
+            return;
+        }
+        field(target).value = value;
+        durationSnapshot = null;
+        syncDateFields();
+        dialog.close();
+        return;
+    }
     const hour = Number(field("dateHour").value) % 12 + (field("datePeriod").value === "PM" ? 12 : 0);
     const value = `${dateKey(selected)}T${pad(hour)}:${field("dateMinute").value}`;
     const start = field("occurredAt").value, end = field("endedAt").value;

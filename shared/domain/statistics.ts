@@ -1,6 +1,10 @@
 import type { Entry, CalendarEvent, BreakdownRow } from "../types.js";
 import { dateKey } from "./calendar.js";
 export function durationMinutes(entry: Entry) {
+  if (entry.type === "app" && entry.durationMinutes !== undefined) {
+    return Number.isFinite(entry.durationMinutes) && entry.durationMinutes > 0
+      ? entry.durationMinutes : 0;
+  }
   if (!entry.endedAt) return 0;
   return Math.max(
     0,

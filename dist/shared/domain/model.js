@@ -11,6 +11,10 @@ export function validateEntry(entry, now = new Date()) {
         (entry.count ?? 0) < 1 ||
         (entry.count ?? 0) > 9999)
         return "Introduce un número entero entre 1 y 9999.";
+    if (entry.type === "app" && entry.durationMinutes !== undefined &&
+        (!Number.isFinite(entry.durationMinutes) || entry.durationMinutes <= 0)) {
+        return "Introduce un tiempo consumido mayor que cero.";
+    }
     const date = new Date(entry.occurredAt || "");
     if (!entry.occurredAt || Number.isNaN(date.getTime()))
         return "Introduce una fecha válida.";
