@@ -1,7 +1,7 @@
 import { accountStorage } from "./auth/account-storage.js";
 import { syncDateFields } from "./date-picker.js";
 import type { StatisticsPeriod } from "./lib/statistics.js";
-type View = "history" | "habits" | "calendar" | "stats" | "tracker";
+type View = "history" | "habits" | "calendar" | "stats" | "tracker" | "f";
 import type {
   Entry,
   HabitGroup,
@@ -201,11 +201,14 @@ function recordCard(e: Entry | CalendarEvent, editable = false) {
       </h3>
       <span class="badge">${e.count} ${e.count === 1 ? "vez" : "veces"}</span>
     </div>
-    ${e.type === "app" ? /* HTML */ `
+    ${
+      e.type === "app"
+        ? /* HTML */ `
       <div class="record-meta">
         <div><span>Registrado</span><time datetime="${esc(e.occurredAt)}">${format(e.occurredAt)}</time></div>
         <div><span>Tiempo consumido</span><span class="record-value">${formatDuration(durationMinutes({ ...e, habit: name }))}</span></div>
-      </div>` : /* HTML */ `    <div class="record-meta">
+      </div>`
+        : /* HTML */ `    <div class="record-meta">
       <div>
         <span>Inicio</span
         ><time datetime="${esc(e.occurredAt)}">${format(e.occurredAt)}</time>
@@ -215,7 +218,8 @@ function recordCard(e: Entry | CalendarEvent, editable = false) {
         >${e.endedAt ? /* HTML */ `<time datetime="${esc(e.endedAt)}">${format(e.endedAt)}</time>` : '<span class="record-value">Sin fecha final</span>'}
       </div>
     </div>
-`}
+`
+    }
     ${
       !editable && (e.description || e.comment)
         ? /* HTML */ `<div class="record-notes">
@@ -352,8 +356,8 @@ function openForm(entry?: Entry | null, habit?: string) {
   }
   setHabitList(false);
   updateSaveHabit();
-  $("appUsageDate").value = entry?.type === "app"
-    ? entry.occurredAt.slice(0, 10) : dateKey(new Date());
+  $("appUsageDate").value =
+    entry?.type === "app" ? entry.occurredAt.slice(0, 10) : dateKey(new Date());
   syncDateFields();
   $("entryDialog").showModal();
   $("mobileApp").value = entry?.type === "app" ? entry.habit : "";
@@ -362,14 +366,16 @@ function openForm(entry?: Entry | null, habit?: string) {
     entry?.type === "app"
       ? "app"
       : entry?.type === "class" || (!entry?.type && entry?.category)
-      ? "class"
-      : "habit",
+        ? "class"
+        : "habit",
   );
   renderClassOptions(entry?.subcategory);
   $(
     entryMode === "app"
       ? "mobileApp"
-      : entryMode === "class" ? "category" : "habit"
+      : entryMode === "class"
+        ? "category"
+        : "habit",
   ).focus();
 }
 $("newEntry").onclick = () => openForm();
@@ -384,20 +390,31 @@ $("entryForm").onsubmit = (event) => {
       entryMode === "app"
         ? $("mobileApp").value.trim()
         : entryMode === "class"
-        ? $("subcategory").value.trim() || $("category").value.trim()
-        : $("habit").value.trim(),
-    category: entryMode === "app"
-      ? "Apps"
-      : entryMode === "class" ? $("category").value.trim() : "",
-    subcategory: entryMode === "app"
+          ? $("subcategory").value.trim() || $("category").value.trim()
+          : $("habit").value.trim(),
+    category:
+      entryMode === "app"
+        ? "Apps"
+        : entryMode === "class"
+          ? $("category").value.trim()
+          : "",
+    subcategory:
+      entryMode === "app"
         ? $("mobileApp").value.trim()
-        : entryMode === "class" ? $("subcategory").value.trim() : "",
-    occurredAt: entryMode === "app"
-      ? `${$("appUsageDate").value}T00:00`
-      : $("occurredAt").value,
+        : entryMode === "class"
+          ? $("subcategory").value.trim()
+          : "",
+    occurredAt:
+      entryMode === "app"
+        ? `${$("appUsageDate").value}T00:00`
+        : $("occurredAt").value,
     endedAt: entryMode === "app" ? "" : $("endedAt").value,
     ...(entryMode === "app"
-      ? { durationMinutes: Number($("appHours").value) * 60 + Number($("appMinutes").value) } : {}),
+      ? {
+          durationMinutes:
+            Number($("appHours").value) * 60 + Number($("appMinutes").value),
+        }
+      : {}),
     count: editing ? (entries.find((e) => e.id === editing)?.count ?? 1) : 1,
     description: $("description").value.trim(),
     comment: $("comment").value.trim(),
@@ -456,7 +473,10 @@ $("export").onclick = () => {
       JSON.stringify(
         {
           application: "Ritmo",
-          version: 4,
+          version: 5,
+          fRecords: JSON.parse(
+            accountStorage.getItem("ritmo-f-records-v1") || "[]",
+          ),
           exportedAt: new Date().toISOString(),
           habits: savedHabits,
           habitGroups,
@@ -583,7 +603,12 @@ $("savedHabits").onclick = (event) => {
   if (button) openForm(null, button.dataset.habit);
 };
 function navigate(view: View, focus = false) {
+  $("newEntry").hidden = view === "f";
   const copy = {
+    f: [
+      "F · Reflexión y progreso",
+      "Registra lo que ocurre y descubre qué te ayuda a superar los impulsos.",
+    ],
     history: [
       "Tu espacio para avanzar",
       "Registra lo que pasó, reflexiona y sigue a tu ritmo.",
@@ -613,6 +638,7 @@ function navigate(view: View, focus = false) {
     ["calendarView", "calendar"],
     ["statsView", "stats"],
     ["trackerView", "tracker"],
+    ["fView", "f"],
   ])
     $(id).hidden = view !== value;
   $("pageTitle").textContent = {
@@ -621,6 +647,7 @@ function navigate(view: View, focus = false) {
     calendar: "Calendario",
     stats: "Estadísticas",
     tracker: "Tracker",
+    f: "F",
   }[view];
   document
     .querySelectorAll<HTMLAnchorElement>("[data-view]")
@@ -642,6 +669,7 @@ function route() {
         "#calendario": "calendar",
         "#estadisticas": "stats",
         "#tracker": "tracker",
+        "#f": "f",
       } as Record<string, View>
     )[location.hash] || "history",
   );
@@ -951,7 +979,9 @@ function renderStatistics() {
   $("prevWeek").setAttribute("aria-label", "Período anterior");
   $("nextWeek").setAttribute("aria-label", "Período siguiente");
   $("activityChart").classList.toggle("monthly-chart", period === "month");
-  const missing = selected.records.filter((e) => e.type !== "app" && !e.endedAt).length;
+  const missing = selected.records.filter(
+    (e) => e.type !== "app" && !e.endedAt,
+  ).length;
   $("statsNote").textContent =
     metric === "time"
       ? `En apps se suma el tiempo consumido; en otros registros se calcula entre inicio y final.${missing ? ` ${missing} registros sin fecha final no aportan tiempo.` : ""}`
@@ -1134,15 +1164,19 @@ function setEntryMode(mode: "habit" | "class" | "app") {
   $("mobileApp").required = mode === "app";
   $("mobileApp").disabled = mode !== "app";
   const apps = new Set([
-    "Instagram", "Facebook", "WhatsApp", "YouTube", "TikTok",
+    "Instagram",
+    "Facebook",
+    "WhatsApp",
+    "YouTube",
+    "TikTok",
     ...entries
-      .filter(e => e.type === "app" || habitKey(e.category || "") === "apps")
-      .map(e => e.subcategory || e.habit),
+      .filter((e) => e.type === "app" || habitKey(e.category || "") === "apps")
+      .map((e) => e.subcategory || e.habit),
     ...(classCatalog["apps"]?.subclasses || []),
   ]);
   $("mobileAppOptions").innerHTML = [...apps]
     .sort((a, b) => a.localeCompare(b, "es"))
-    .map(name => `<option value="${esc(name)}"></option>`)
+    .map((name) => `<option value="${esc(name)}"></option>`)
     .join("");
   $("category").required = isClass;
   $("category").disabled = !isClass;
@@ -1212,3 +1246,5 @@ $("recordDetails").addEventListener("click", (event) => {
 });
 
 import "./tracker.js";
+
+import "./f-journal.js";

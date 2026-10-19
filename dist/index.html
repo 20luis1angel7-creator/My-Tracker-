@@ -51,7 +51,16 @@
       hidden
     ></button>
     <aside id="sidebar" class="sidebar">
-      <button id="sidebarToggle" type="button" class="brand menu-logo" aria-label="Contraer menú" aria-controls="sidebar" aria-expanded="true"><span aria-hidden="true">r.</span><b class="brand-name">ritmo</b></button>
+      <button
+        id="sidebarToggle"
+        type="button"
+        class="brand menu-logo"
+        aria-label="Contraer menú"
+        aria-controls="sidebar"
+        aria-expanded="true"
+      >
+        <span aria-hidden="true">r.</span><b class="brand-name">ritmo</b>
+      </button>
       <p class="menu-label">MI ESPACIO</p>
       <nav aria-label="Menú principal">
         <a
@@ -93,8 +102,18 @@
           ><span aria-hidden="true">▥</span
           ><b class="nav-text">Estadísticas</b></a
         >
+        <a href="#f" class="menu-link" data-view="f" aria-label="F" title="F"
+          ><span aria-hidden="true">F</span><b class="nav-text">F</b></a
+        >
       </nav>
-      <div class="sidebar-profile"><span id="accountAvatar" class="profile-avatar" aria-hidden="true">U</span><div class="profile-details"><span id="accountUser">Mi cuenta</span><small>Perfil</small></div></div>
+      <div class="sidebar-profile">
+        <span id="accountAvatar" class="profile-avatar" aria-hidden="true"
+          >U</span
+        >
+        <div class="profile-details">
+          <span id="accountUser">Mi cuenta</span><small>Perfil</small>
+        </div>
+      </div>
     </aside>
     <div class="app-shell">
       <header>
@@ -109,8 +128,45 @@
         ><span id="pageTitle" class="page-title">Historial</span>
         <div class="header-actions">
           <span class="privacy">● Cuenta personal</span>
-          <button id="themeToggle" type="button" class="secondary header-icon" aria-label="Activar modo oscuro" title="Activar modo oscuro" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M20.9 13a9 9 0 0 1-9.9-9.9A9 9 0 1 0 20.9 13Z"/></svg></button>
-          <button id="logoutButton" type="button" class="secondary header-icon" aria-label="Cerrar sesión" title="Cerrar sesión"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h4M14 8l4 4-4 4M8 12h12"/></svg></button>
+          <button
+            id="themeToggle"
+            type="button"
+            class="secondary header-icon"
+            aria-label="Activar modo oscuro"
+            title="Activar modo oscuro"
+            aria-pressed="false"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              aria-hidden="true"
+            >
+              <path d="M20.9 13a9 9 0 0 1-9.9-9.9A9 9 0 1 0 20.9 13Z" />
+            </svg>
+          </button>
+          <button
+            id="logoutButton"
+            type="button"
+            class="secondary header-icon"
+            aria-label="Cerrar sesión"
+            title="Cerrar sesión"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path
+                d="M9 4H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h4M14 8l4 4-4 4M8 12h12"
+              />
+            </svg>
+          </button>
         </div>
       </header>
       <main>
@@ -123,7 +179,15 @@
               Registra lo que pasó, reflexiona y sigue a tu ritmo.
             </p>
           </div>
-          <button class="primary floating-entry" id="newEntry" type="button" aria-label="Registrar recaída" title="Registrar recaída"><span aria-hidden="true">+</span></button>
+          <button
+            class="primary floating-entry"
+            id="newEntry"
+            type="button"
+            aria-label="Registrar recaída"
+            title="Registrar recaída"
+          >
+            <span aria-hidden="true">+</span>
+          </button>
         </section>
         <section id="habitsView" class="content habit-section" hidden>
           <div class="heading">
@@ -399,11 +463,145 @@
             mes; los días futuros están deshabilitados.
           </p>
         </section>
+        <section id="fView" hidden>
+          <div class="f-actions">
+            <button id="fNewRelapse" type="button" class="primary">
+              ＋ Registrar recaída</button
+            ><button id="fNewSuccess" type="button" class="secondary">
+              ✓ Registrar superación
+            </button>
+          </div>
+          <div class="content">
+            <div class="heading">
+              <div>
+                <h2>Recaídas y superaciones</h2>
+                <p>
+                  Cada registro cuenta como un evento. Una recaída no borra las
+                  superaciones anteriores.
+                </p>
+              </div>
+              <select id="fPeriod" aria-label="Período de F">
+                <option value="week">Semana</option>
+                <option value="month">Mes</option>
+              </select>
+            </div>
+            <div class="f-period-controls">
+              <button
+                id="fPrev"
+                type="button"
+                class="secondary"
+                aria-label="Período anterior"
+              >
+                ‹</button
+              ><strong id="fPeriodLabel"></strong
+              ><button
+                id="fNext"
+                type="button"
+                class="secondary"
+                aria-label="Período siguiente"
+              >
+                ›</button
+              ><button id="fToday" type="button" class="secondary">
+                Actual
+              </button>
+            </div>
+            <div id="fTotals" class="f-totals"></div>
+            <p class="f-legend">
+              <span>● Recaídas</span><span>● Superaciones</span>
+            </p>
+            <div class="f-chart-scroll">
+              <div id="fChart" class="f-chart"></div>
+            </div>
+            <p id="fMessage" class="stats-note" role="status"></p>
+          </div>
+          <div class="f-pattern-grid">
+            <section class="content">
+              <div class="heading"><h2>Conductas registradas</h2></div>
+              <div id="fBehaviors" class="f-patterns"></div>
+            </section>
+            <section class="content">
+              <div class="heading"><h2>Estrategias de superación</h2></div>
+              <div id="fStrategies" class="f-patterns"></div>
+            </section>
+          </div>
+          <section class="content">
+            <div class="heading">
+              <div>
+                <h2>Registros de F</h2>
+                <p id="fFilterLabel">Registros del período seleccionado</p>
+              </div>
+              <button id="fClearDay" type="button" class="secondary" hidden>
+                Ver todo el período
+              </button>
+            </div>
+            <div id="fHistory"></div>
+            <div class="history-footer">
+              <span id="fHistoryCount"></span>
+              <div class="pagination">
+                <button
+                  id="fHistoryPrev"
+                  class="secondary"
+                  type="button"
+                  aria-label="Página anterior"
+                >
+                  ‹</button
+                ><span id="fHistoryPage"></span
+                ><button
+                  id="fHistoryNext"
+                  class="secondary"
+                  type="button"
+                  aria-label="Página siguiente"
+                >
+                  ›
+                </button>
+              </div>
+            </div>
+          </section>
+        </section>
         <p class="footnote">
-          Tus datos se guardan en tu cuenta. Puedes exportar una copia cuando quieras.
+          Tus datos se guardan en tu cuenta. Puedes exportar una copia cuando
+          quieras.
         </p>
       </main>
     </div>
+    <dialog id="fDialog" class="f-dialog" aria-labelledby="fDialogTitle">
+      <form id="fForm" novalidate>
+        <div class="dialog-heading">
+          <div>
+            <p id="fQuestionCount" class="date-picker-eyebrow"></p>
+            <h2 id="fDialogTitle">Registrar recaída</h2>
+          </div>
+          <button id="fClose" class="icon" type="button" aria-label="Cerrar">
+            ×
+          </button>
+        </div>
+        <div id="fFormContent"></div>
+        <p id="fFormError" class="f-form-error" role="status"></p>
+        <div class="dialog-actions">
+          <button id="fSave" type="submit" class="primary">
+            Guardar registro
+          </button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="fDetails" aria-labelledby="fDetailsTitle">
+      <div class="dialog-heading">
+        <h2 id="fDetailsTitle">Detalle de F</h2>
+        <button
+          id="fDetailsClose"
+          type="button"
+          class="icon"
+          aria-label="Cerrar"
+        >
+          ×
+        </button>
+      </div>
+      <div id="fDetailsContent"></div>
+      <div class="dialog-actions">
+        <button id="fDelete" type="button" class="secondary">Eliminar</button
+        ><button id="fEdit" type="button" class="primary">Editar</button>
+      </div>
+    </dialog>
     <dialog id="recordDetails" aria-labelledby="detailsTitle">
       <div class="dialog-heading">
         <h2 id="detailsTitle">Detalle del registro</h2>
@@ -449,11 +647,24 @@
           >
             Registrar clase
           </button>
-          <button type="button" id="modeApp" class="secondary" aria-pressed="false">Apps del celular</button>
+          <button
+            type="button"
+            id="modeApp"
+            class="secondary"
+            aria-pressed="false"
+          >
+            Apps del celular
+          </button>
         </div>
         <div id="entryAppPicker" class="app-picker" hidden>
           <label for="mobileApp">App del celular</label>
-          <input id="mobileApp" list="mobileAppOptions" maxlength="80" placeholder="Ej.: Instagram, WhatsApp, TikTok" disabled>
+          <input
+            id="mobileApp"
+            list="mobileAppOptions"
+            maxlength="80"
+            placeholder="Ej.: Instagram, WhatsApp, TikTok"
+            disabled
+          />
           <datalist id="mobileAppOptions"></datalist>
         </div>
         <div id="entryClassification" class="form-grid classification" hidden>
@@ -505,15 +716,20 @@
           </div>
         </div>
         <div id="appDateTimeRow" class="app-date-time-row" hidden>
-        <div id="appUsageDateField" class="date-field" hidden>
-          <label for="pickAppDate">Fecha de uso</label>
-          <input id="appUsageDate" type="hidden">
-          <button id="pickAppDate" type="button" class="date-field-button" aria-haspopup="dialog">
-            <span aria-hidden="true">▦</span>
-            <span id="appDateText">Seleccionar fecha</span>
-            <span aria-hidden="true">⌄</span>
-          </button>
-        </div>
+          <div id="appUsageDateField" class="date-field" hidden>
+            <label for="pickAppDate">Fecha de uso</label>
+            <input id="appUsageDate" type="hidden" />
+            <button
+              id="pickAppDate"
+              type="button"
+              class="date-field-button"
+              aria-haspopup="dialog"
+            >
+              <span aria-hidden="true">▦</span>
+              <span id="appDateText">Seleccionar fecha</span>
+              <span aria-hidden="true">⌄</span>
+            </button>
+          </div>
         </div>
         <div id="entryDates" class="form-grid entry-dates">
           <div class="date-field">
@@ -624,14 +840,18 @@
           ><button id="dateNow" type="button" class="secondary">Ahora</button>
         </div>
       </div>
-        <div id="appDurationField" class="app-picker" hidden>
-          <label>Tiempo consumido</label>
-          <div class="app-duration-selectors">
-            <label for="appHours">Horas<select id="appHours" required disabled></select></label>
-            <span class="duration-colon" aria-hidden="true">:</span>
-            <label for="appMinutes">Minutos<select id="appMinutes" required disabled></select></label>
-          </div>
+      <div id="appDurationField" class="app-picker" hidden>
+        <label>Tiempo consumido</label>
+        <div class="app-duration-selectors">
+          <label for="appHours"
+            >Horas<select id="appHours" required disabled></select
+          ></label>
+          <span class="duration-colon" aria-hidden="true">:</span>
+          <label for="appMinutes"
+            >Minutos<select id="appMinutes" required disabled></select
+          ></label>
         </div>
+      </div>
 
       <p id="datePickerError" class="date-picker-error" role="status"></p>
       <div class="dialog-actions">

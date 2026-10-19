@@ -30,3 +30,4 @@ REALIZADOS +
     -cuando haga click al icono de ritmo abre y cierre el menu
     -en el menu donde dice "un paso a la vez" cambiarlo y poner el perfil 
 }
++agregue un nuevo modulo F

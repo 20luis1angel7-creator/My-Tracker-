@@ -1,9 +1,11 @@
+import { validateFRecord } from "./domain/f-records.js";
 export const ACCOUNT_KEYS = [
     "ritmo-relapses-v1",
     "ritmo-habits-v1",
     "ritmo-habit-groups-v1",
     "ritmo-classes-v1",
     "ritmo-tracker-v1",
+    "ritmo-f-records-v1",
 ];
 export function validAccountValue(key, value) {
     if (!ACCOUNT_KEYS.includes(key) ||
@@ -12,6 +14,8 @@ export function validAccountValue(key, value) {
         return false;
     try {
         const parsed = JSON.parse(value);
+        if (key === "ritmo-f-records-v1")
+            return Array.isArray(parsed) && parsed.every((v) => !validateFRecord(v));
         if (key === "ritmo-habits-v1")
             return (Array.isArray(parsed) && parsed.every((v) => typeof v === "string"));
         if (key === "ritmo-relapses-v1")
@@ -67,7 +71,9 @@ export function mergeAccountData(current, incoming) {
                     s,
                 ])).values(),
             ]);
-        else if (key === "ritmo-relapses-v1" || key === "ritmo-tracker-v1") {
+        else if (key === "ritmo-relapses-v1" ||
+            key === "ritmo-tracker-v1" ||
+            key === "ritmo-f-records-v1") {
             const items = new Map(a.map((v) => [
                 String(v.id || JSON.stringify(v)),
                 v,

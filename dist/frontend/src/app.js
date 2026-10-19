@@ -149,11 +149,13 @@ function recordCard(e, editable = false) {
       </h3>
       <span class="badge">${e.count} ${e.count === 1 ? "vez" : "veces"}</span>
     </div>
-    ${e.type === "app" ? /* HTML */ `
+    ${e.type === "app"
+        ? /* HTML */ `
       <div class="record-meta">
         <div><span>Registrado</span><time datetime="${esc(e.occurredAt)}">${format(e.occurredAt)}</time></div>
         <div><span>Tiempo consumido</span><span class="record-value">${formatDuration(durationMinutes({ ...e, habit: name }))}</span></div>
-      </div>` : /* HTML */ `    <div class="record-meta">
+      </div>`
+        : /* HTML */ `    <div class="record-meta">
       <div>
         <span>Inicio</span
         ><time datetime="${esc(e.occurredAt)}">${format(e.occurredAt)}</time>
@@ -281,8 +283,8 @@ function openForm(entry, habit) {
     }
     setHabitList(false);
     updateSaveHabit();
-    $("appUsageDate").value = entry?.type === "app"
-        ? entry.occurredAt.slice(0, 10) : dateKey(new Date());
+    $("appUsageDate").value =
+        entry?.type === "app" ? entry.occurredAt.slice(0, 10) : dateKey(new Date());
     syncDateFields();
     $("entryDialog").showModal();
     $("mobileApp").value = entry?.type === "app" ? entry.habit : "";
@@ -295,7 +297,9 @@ function openForm(entry, habit) {
     renderClassOptions(entry?.subcategory);
     $(entryMode === "app"
         ? "mobileApp"
-        : entryMode === "class" ? "category" : "habit").focus();
+        : entryMode === "class"
+            ? "category"
+            : "habit").focus();
 }
 $("newEntry").onclick = () => openForm();
 for (const id of ["close", "cancel"])
@@ -312,16 +316,23 @@ $("entryForm").onsubmit = (event) => {
                 : $("habit").value.trim(),
         category: entryMode === "app"
             ? "Apps"
-            : entryMode === "class" ? $("category").value.trim() : "",
+            : entryMode === "class"
+                ? $("category").value.trim()
+                : "",
         subcategory: entryMode === "app"
             ? $("mobileApp").value.trim()
-            : entryMode === "class" ? $("subcategory").value.trim() : "",
+            : entryMode === "class"
+                ? $("subcategory").value.trim()
+                : "",
         occurredAt: entryMode === "app"
             ? `${$("appUsageDate").value}T00:00`
             : $("occurredAt").value,
         endedAt: entryMode === "app" ? "" : $("endedAt").value,
         ...(entryMode === "app"
-            ? { durationMinutes: Number($("appHours").value) * 60 + Number($("appMinutes").value) } : {}),
+            ? {
+                durationMinutes: Number($("appHours").value) * 60 + Number($("appMinutes").value),
+            }
+            : {}),
         count: editing ? (entries.find((e) => e.id === editing)?.count ?? 1) : 1,
         description: $("description").value.trim(),
         comment: $("comment").value.trim(),
@@ -375,7 +386,8 @@ $("export").onclick = () => {
     const blob = new Blob([
         JSON.stringify({
             application: "Ritmo",
-            version: 4,
+            version: 5,
+            fRecords: JSON.parse(accountStorage.getItem("ritmo-f-records-v1") || "[]"),
             exportedAt: new Date().toISOString(),
             habits: savedHabits,
             habitGroups,
@@ -493,7 +505,12 @@ $("savedHabits").onclick = (event) => {
         openForm(null, button.dataset.habit);
 };
 function navigate(view, focus = false) {
+    $("newEntry").hidden = view === "f";
     const copy = {
+        f: [
+            "F · Reflexión y progreso",
+            "Registra lo que ocurre y descubre qué te ayuda a superar los impulsos.",
+        ],
         history: [
             "Tu espacio para avanzar",
             "Registra lo que pasó, reflexiona y sigue a tu ritmo.",
@@ -523,6 +540,7 @@ function navigate(view, focus = false) {
         ["calendarView", "calendar"],
         ["statsView", "stats"],
         ["trackerView", "tracker"],
+        ["fView", "f"],
     ])
         $(id).hidden = view !== value;
     $("pageTitle").textContent = {
@@ -531,6 +549,7 @@ function navigate(view, focus = false) {
         calendar: "Calendario",
         stats: "Estadísticas",
         tracker: "Tracker",
+        f: "F",
     }[view];
     document
         .querySelectorAll("[data-view]")
@@ -555,6 +574,7 @@ function route() {
         "#calendario": "calendar",
         "#estadisticas": "stats",
         "#tracker": "tracker",
+        "#f": "f",
     }[location.hash] || "history");
 }
 window.addEventListener("hashchange", route);
@@ -984,15 +1004,19 @@ function setEntryMode(mode) {
     $("mobileApp").required = mode === "app";
     $("mobileApp").disabled = mode !== "app";
     const apps = new Set([
-        "Instagram", "Facebook", "WhatsApp", "YouTube", "TikTok",
+        "Instagram",
+        "Facebook",
+        "WhatsApp",
+        "YouTube",
+        "TikTok",
         ...entries
-            .filter(e => e.type === "app" || habitKey(e.category || "") === "apps")
-            .map(e => e.subcategory || e.habit),
+            .filter((e) => e.type === "app" || habitKey(e.category || "") === "apps")
+            .map((e) => e.subcategory || e.habit),
         ...(classCatalog["apps"]?.subclasses || []),
     ]);
     $("mobileAppOptions").innerHTML = [...apps]
         .sort((a, b) => a.localeCompare(b, "es"))
-        .map(name => `<option value="${esc(name)}"></option>`)
+        .map((name) => `<option value="${esc(name)}"></option>`)
         .join("");
     $("category").required = isClass;
     $("category").disabled = !isClass;
@@ -1058,4 +1082,5 @@ $("recordDetails").addEventListener("click", (event) => {
         $("recordDetails").close();
 });
 import "./tracker.js";
+import "./f-journal.js";
 //# sourceMappingURL=app.js.map

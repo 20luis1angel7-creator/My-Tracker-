@@ -92,7 +92,8 @@ export const accountStorage = {
         }
         const value = key === "ritmo-relapses-v1" ||
             key === "ritmo-habits-v1" ||
-            key === "ritmo-tracker-v1"
+            key === "ritmo-tracker-v1" ||
+            key === "ritmo-f-records-v1"
             ? "[]"
             : "{}";
         this.setItem(key, value);

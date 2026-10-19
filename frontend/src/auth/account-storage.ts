@@ -53,7 +53,10 @@ function enqueue(key: AccountKey, value: string) {
       );
     } catch {
       lastError = true;
-      status("Hay cambios pendientes. Se guardarán automáticamente cuando vuelva la conexión.", true);
+      status(
+        "Hay cambios pendientes. Se guardarán automáticamente cuando vuelva la conexión.",
+        true,
+      );
       if (retryTimer === undefined) {
         retryTimer = window.setTimeout(() => {
           retryTimer = undefined;
@@ -113,7 +116,8 @@ export const accountStorage = {
     const value =
       key === "ritmo-relapses-v1" ||
       key === "ritmo-habits-v1" ||
-      key === "ritmo-tracker-v1"
+      key === "ritmo-tracker-v1" ||
+      key === "ritmo-f-records-v1"
         ? "[]"
         : "{}";
     this.setItem(key, value);

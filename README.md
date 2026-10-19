@@ -189,3 +189,14 @@ RITMO_TEST_DATABASE_URL=postgresql://usuario:clave@localhost/base_pruebas npm te
 ```
 
 La prueba crea usuarios temporales e importa datos de prueba en la cuenta admin de esa base. No debe apuntar a tus datos reales.
+
+
+## Apartado F
+
+«F» en el menú abre un panel independiente para registrar recaídas y superaciones de impulsos. Los formularios contienen las 18 y 11 preguntas aportadas, visibles en un único formulario con secciones y un botón de guardar al final. Permiten seleccionar varias emociones y, en recaídas, varias conductas. Cada conducta se cuenta por separado; el evento se mantiene como un solo registro.
+
+El panel incluye gráfica semanal/mensual de eventos, desglose por conducta, estrategias de superación e historial con detalle, edición y eliminación. Las gráficas se calculan únicamente con tus registros, sin datos de ejemplo. Los días sin registros no se interpretan automáticamente como superaciones.
+
+Los registros se guardan por usuario en PostgreSQL usando `ritmo-f-records-v1`, con el mismo guardado automático y recuperación de conexión del resto de la aplicación. También se incluyen en la exportación JSON. No se mezclan con el historial general de recaídas.
+
+Tras actualizar el código, reinicia el backend con Ctrl+C y `npm start`, y recarga la página, para que la API acepte la nueva colección de datos.
